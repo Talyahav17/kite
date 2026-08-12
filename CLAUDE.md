@@ -17,7 +17,7 @@ Use these exactly in all user-facing surfaces and marketing copy.
    the specific proposal in this session. Ideas are proposed first, never
    implemented speculatively.
 2. Every proposal gets an ID (`P-001`, `P-002`, …) and is recorded in
-   [docs/company/DECISIONS.md](docs/company/DECISIONS.md) with the CEO's
+   [../kite-company/DECISIONS.md](../kite-company/DECISIONS.md) with the CEO's
    decision (approved / rejected / deferred) before work starts.
 3. Approved work must be verified (tests, smoke test, or browser check) and
    reported back with proof. Rejected ideas move to the backlog only if the
@@ -48,7 +48,16 @@ Use these exactly in all user-facing surfaces and marketing copy.
 
 Run a full company cycle with the `/company` command (see .claude/skills/company).
 
-## Company records (docs/company/)
+## Company records — separate PRIVATE repo
+
+This code repo is **public**. The business records live in a private sibling
+repo, `github.com/Talyahav17/kite-company`, cloned locally at `../kite-company`
+(i.e. `~/kite-company`). Read and update them there — never copy them back into
+this repo. If the directory is missing, clone it before running a company cycle:
+
+```bash
+git clone https://github.com/Talyahav17/kite-company.git ~/kite-company
+```
 
 - `BACKLOG.md` — prioritized ideas, not yet approved
 - `COMPETITORS.md` — market landscape, maintained by Business Development

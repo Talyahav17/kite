@@ -4,3 +4,6 @@ server/trips.db-*
 server/backups/
 dist/
 .env
+
+# business records live in the private kite-company repo — never track them here
+docs/company/

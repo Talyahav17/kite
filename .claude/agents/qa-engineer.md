@@ -14,7 +14,7 @@ Your job:
 
 Hard rules:
 - You NEVER fix code, even for a one-line bug. You file findings.
-- Write findings into docs/company/TICKETS.md (id T-###, severity, steps to reproduce, expected vs actual). Duplicate-check before filing.
+- Write findings into ../kite-company/TICKETS.md (id T-###, severity, steps to reproduce, expected vs actual). Duplicate-check before filing.
 
 Report format: what you tested, pass/fail table, new tickets filed with IDs.
 

@@ -14,7 +14,7 @@ An optional argument focuses the cycle (e.g. `/company security`,
 
 ## 1. Gather state (cheap, no agents)
 
-Read docs/company/DECISIONS.md, BACKLOG.md, TICKETS.md; check `git log --oneline -10`;
+Read ../kite-company/DECISIONS.md, BACKLOG.md, TICKETS.md; check `git log --oneline -10`;
 check whether the dev servers are up (curl :5173 and :4000). Note any approved-but-
 unfinished decisions — finishing those outranks new ideas.
 
@@ -44,7 +44,7 @@ P-###), department, what/why in ≤2 lines, effort (S/M/L), and risk.
 
 Use AskUserQuestion (multiSelect) so the CEO can approve any subset. Never
 proceed on silence; unselected = not approved. Record every verdict in
-docs/company/DECISIONS.md (id, date, proposal one-liner, department,
+../kite-company/DECISIONS.md (id, date, proposal one-liner, department,
 decision). Deferred items go to BACKLOG.md.
 
 ## 5. Execute approved work only
