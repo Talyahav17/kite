@@ -1,5 +1,5 @@
 {
-  "name": "trip-planner-server",
+  "name": "kite-server",
   "private": true,
   "type": "module",
   "scripts": {
