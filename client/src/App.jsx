@@ -1,11 +1,11 @@
 import { useEffect, useState, createContext, useContext } from "react";
-import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { api } from "./api.js";
 import Auth from "./Auth.jsx";
-import KiteLogo from "./KiteLogo.jsx";
-import SharedTrip from "./SharedTrip.jsx";
 import Trips from "./Trips.jsx";
 import TripDetail from "./TripDetail.jsx";
+import KiteLogo from "./KiteLogo.jsx";
+import SharedTrip from "./SharedTrip.jsx";
 
 const UserContext = createContext(null);
 export const useUser = () => useContext(UserContext);
@@ -13,6 +13,7 @@ export const useUser = () => useContext(UserContext);
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     api
@@ -28,6 +29,17 @@ export default function App() {
   }
 
   if (user === undefined) return <div className="page-loading">Loading…</div>;
+
+  const isSharedView = location.pathname.startsWith("/s/");
+
+  // Signed out: the split sign-in screen owns the whole window (P-028).
+  if (!user && !isSharedView) {
+    return (
+      <UserContext.Provider value={{ user, setUser }}>
+        <Auth />
+      </UserContext.Provider>
+    );
+  }
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
@@ -48,15 +60,9 @@ export default function App() {
         <Routes>
           {/* public: a share link works without an account (P-018) */}
           <Route path="/s/:token" element={<SharedTrip />} />
-          {user ? (
-            <>
-              <Route path="/" element={<Trips />} />
-              <Route path="/trips/:id" element={<TripDetail />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          ) : (
-            <Route path="*" element={<Auth />} />
-          )}
+          <Route path="/" element={<Trips />} />
+          <Route path="/trips/:id" element={<TripDetail />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </UserContext.Provider>

@@ -140,6 +140,7 @@ h2 { font-size: 1.15rem; margin: 0 0 12px; }
 .btn-danger { color: var(--danger); }
 .btn-small { padding: 4px 10px; font-size: 0.85rem; }
 .btn-block { width: 100%; }
+.btn-lg { padding: 11px 20px; font-size: 1rem; border-radius: 10px; }
 
 .btn-link {
   font: inherit;
@@ -189,33 +190,214 @@ input:focus, textarea:focus, select:focus {
   font-size: 0.9rem;
 }
 
-/* ---- auth ---- */
+/* ---- auth: split screen (P-028) ---- */
 
-.auth-wrap { display: flex; justify-content: center; padding-top: 48px; }
-.auth-card { width: 100%; max-width: 380px; text-align: center; }
-.auth-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; }
-.auth-card form { text-align: left; margin-top: 20px; }
-.auth-sub { color: var(--ink-soft); margin: 4px 0 0; font-size: 0.95rem; }
+.auth-split {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.auth-art {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 44px;
+}
+
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* keeps the copy legible wherever the kite happens to fly */
+.auth-art::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 52%;
+  background: linear-gradient(to top, rgba(70, 20, 140, 0.62), rgba(70, 20, 140, 0));
+  z-index: 1;
+}
+
+.auth-art-copy { position: relative; z-index: 2; color: #fff; max-width: 380px; }
+
+.auth-art-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: ui-rounded, "SF Pro Rounded", "Avenir Next Rounded", "Nunito",
+    system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+}
+
+.auth-art-copy h2 {
+  font-size: 1.9rem;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.auth-art-copy p { margin: 0; opacity: 0.9; font-size: 0.98rem; line-height: 1.5; }
+
+.sky-kite { animation: kite-sway 9s ease-in-out infinite; transform-origin: 300px 400px; }
+
+.auth-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--card);
+}
+
+.auth-card { width: 100%; max-width: 380px; }
+.auth-card h1 { font-size: 1.55rem; letter-spacing: -0.02em; }
+.auth-card form { margin-top: 26px; }
+.auth-sub { color: var(--ink-soft); margin: 6px 0 0; font-size: 0.95rem; }
+.auth-sub .btn-link { margin: 0; font-size: inherit; }
+
+@media (max-width: 860px) {
+  .auth-split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .auth-art { height: 216px; padding: 20px 24px; }
+  .auth-art-brand { margin-bottom: 10px; font-size: 1.15rem; }
+  .auth-art-copy h2 { font-size: 1.25rem; }
+  .auth-art-copy p { display: none; }
+  .auth-form-side { padding: 32px 24px; align-items: flex-start; }
+}
 
 /* ---- trips list ---- */
 
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 
+/* ---- greeting + filters (P-029) ---- */
+
+.greeting {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.greeting h1 { font-size: 1.9rem; letter-spacing: -0.03em; margin-bottom: 4px; }
+.greeting-sub { color: var(--ink-soft); margin: 0; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+
+.chip {
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.chip:disabled { opacity: 0.45; cursor: default; }
+
+.chip.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.chip-count {
+  font-size: 0.75rem;
+  background: var(--bg);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.chip.selected .chip-count { background: rgba(255, 255, 255, 0.25); color: #fff; }
+
 .trip-form { margin-bottom: 20px; }
 
-.trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 18px; }
+
+/* ---- cover cards (P-029) ---- */
+
+.trip-cover {
+  position: relative;
+  height: 176px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+/* scrim so the title stays readable over any cover */
+.trip-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 62%);
+}
+
+.trip-cover-text { position: relative; z-index: 1; align-self: stretch; }
+
+.trip-cover .trip-card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.trip-cover .trip-card-dest {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.88rem;
+  margin-top: 1px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.trip-countdown.on-cover {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  backdrop-filter: blur(4px);
+}
+
+.trip-countdown.on-cover.now { background: var(--accent); color: #fff; }
+
+.trip-card-body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--card);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
 
 .trip-card {
+  display: block;
   text-decoration: none;
   color: var(--ink);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
   animation: fade-up 0.4s ease-out backwards;
 }
 
 .trip-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.16);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(28, 36, 52, 0.16);
 }
 
 .trip-card:nth-child(2) { animation-delay: 0.06s; }

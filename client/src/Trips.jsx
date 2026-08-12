@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "./api.js";
+import { coverStyle } from "./covers.js";
+import { useUser } from "./App.jsx";
 
 export function fmtRange(start, end) {
   const opts = { month: "short", day: "numeric" };
@@ -52,11 +54,20 @@ export function tripStatus(start, end) {
 
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 
+const FILTERS = [
+  { key: "all", label: "All trips" },
+  { key: "now", label: "Happening now" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+];
+
 export default function Trips() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [trips, setTrips] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -93,14 +104,57 @@ export default function Trips() {
       </div>
     );
 
+  const counts = {
+    all: trips.length,
+    now: trips.filter((t) => tripStatus(t.start_date, t.end_date).kind === "now").length,
+    upcoming: trips.filter((t) =>
+      ["soon", "future"].includes(tripStatus(t.start_date, t.end_date).kind)
+    ).length,
+    past: trips.filter((t) => tripStatus(t.start_date, t.end_date).kind === "past").length,
+  };
+
+  const visible = trips.filter((t) => {
+    const kind = tripStatus(t.start_date, t.end_date).kind;
+    if (filter === "all") return true;
+    if (filter === "upcoming") return kind === "soon" || kind === "future";
+    return kind === filter;
+  });
+
+  const firstName = (user?.name || "").split(" ")[0];
+
   return (
     <div className="trips-page">
-      <div className="page-head">
-        <h1>Your trips</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+      <div className="greeting">
+        <div>
+          <h1>Where to next{firstName ? `, ${firstName}` : ""}?</h1>
+          <p className="greeting-sub">
+            {counts.now > 0
+              ? "You're on a trip right now — have a good one."
+              : counts.upcoming > 0
+              ? `${counts.upcoming} ${counts.upcoming === 1 ? "trip" : "trips"} on the horizon.`
+              : "Every trip starts with a first line in the itinerary."}
+          </p>
+        </div>
+        <button className="btn btn-primary btn-lg" onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "+ New trip"}
         </button>
       </div>
+
+      {trips.length > 0 && (
+        <div className="chip-row">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              className={`chip ${filter === f.key ? "selected" : ""}`}
+              onClick={() => setFilter(f.key)}
+              disabled={counts[f.key] === 0 && f.key !== "all"}
+            >
+              {f.label}
+              <span className="chip-count">{counts[f.key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <form className="card trip-form" onSubmit={create}>
@@ -155,25 +209,40 @@ export default function Trips() {
         </div>
       )}
 
+      {trips.length > 0 && visible.length === 0 && (
+        <div className="empty-state">
+          <p>No {FILTERS.find((f) => f.key === filter)?.label.toLowerCase()} to show.</p>
+        </div>
+      )}
+
       <div className="trip-grid">
-        {trips.map((t) => {
+        {visible.map((t) => {
           const status = tripStatus(t.start_date, t.end_date);
+          const days = tripDays(t.start_date, t.end_date).length;
           return (
-          <Link key={t.id} to={`/trips/${t.id}`} className="card trip-card">
-            <div className="trip-card-top">
-              <div className="trip-card-title">{t.title}</div>
-              <span className={`trip-countdown ${status.kind}`}>
-                {status.live && <span className="live-dot" />}
-                {status.label}
-              </span>
-            </div>
-            {t.destination && <div className="trip-card-dest">📍 {t.destination}</div>}
-            <div className="trip-card-dates">{fmtRange(t.start_date, t.end_date)}</div>
-            <div className="trip-card-meta">
-              {tripDays(t.start_date, t.end_date).length} days · {t.item_count}{" "}
-              {t.item_count === 1 ? "item" : "items"} planned
-            </div>
-          </Link>
+            <Link key={t.id} to={`/trips/${t.id}`} className="trip-card">
+              <div className="trip-cover" style={coverStyle(t.id)}>
+                <span className={`trip-countdown on-cover ${status.kind}`}>
+                  {status.live && <span className="live-dot" />}
+                  {status.label}
+                </span>
+                <div className="trip-cover-text">
+                  <div className="trip-card-title">{t.title}</div>
+                  {t.destination && (
+                    <div className="trip-card-dest">{t.destination}</div>
+                  )}
+                </div>
+              </div>
+              <div className="trip-card-body">
+                <span className="trip-card-dates">
+                  {fmtRange(t.start_date, t.end_date)}
+                </span>
+                <span className="trip-card-meta">
+                  {days} {days === 1 ? "day" : "days"} · {t.item_count}{" "}
+                  {t.item_count === 1 ? "item" : "items"}
+                </span>
+              </div>
+            </Link>
           );
         })}
       </div>

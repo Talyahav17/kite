@@ -1,0 +1,85 @@
+// P-028: the illustrated half of the sign-in screen. Drawn here as inline SVG
+// rather than shipped as an image — it stays sharp at any size, themes off the
+// brand violet, and adds nothing to load.
+export default function SkyPanel() {
+  return (
+    <svg
+      className="sky"
+      viewBox="0 0 520 620"
+      preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="sky-bg" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stopColor="#c4b5fd" />
+          <stop offset="0.55" stopColor="#a78bfa" />
+          <stop offset="1" stopColor="#7c3aed" />
+        </linearGradient>
+        <linearGradient id="sail" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#ede9fe" />
+        </linearGradient>
+        <radialGradient id="glow" cx="0.5" cy="0.5">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <rect width="520" height="620" fill="url(#sky-bg)" />
+      <circle cx="380" cy="120" r="190" fill="url(#glow)" />
+
+      {/* clouds */}
+      <g fill="#ffffff" opacity="0.35">
+        <ellipse cx="90" cy="150" rx="70" ry="26" />
+        <ellipse cx="140" cy="140" rx="48" ry="22" />
+        <ellipse cx="410" cy="300" rx="80" ry="28" />
+        <ellipse cx="360" cy="292" rx="46" ry="20" />
+        <ellipse cx="180" cy="470" rx="90" ry="30" />
+        <ellipse cx="240" cy="462" rx="52" ry="22" />
+      </g>
+
+      {/* horizon arc, a nod to the world you're planning across */}
+      <g opacity="0.3" stroke="#ffffff" fill="none" strokeWidth="1.5">
+        <path d="M-40 560 Q 260 460 560 560" />
+        <path d="M-40 590 Q 260 490 560 590" />
+      </g>
+
+      {/* route line with stops */}
+      <g className="sky-route">
+        <path
+          d="M70 520 C 150 470, 200 430, 300 400"
+          stroke="#ffffff"
+          strokeWidth="2.5"
+          strokeDasharray="7 9"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.85"
+        />
+        <circle cx="70" cy="520" r="7" fill="#ffffff" />
+        <circle cx="300" cy="400" r="7" fill="#ffffff" />
+      </g>
+
+      {/* the kite, mid-flight */}
+      <g className="sky-kite">
+        <path
+          d="M300 400 C 288 430, 250 452, 218 448 C 190 444, 182 418, 202 406
+             C 218 396, 236 410, 228 424 C 221 436, 204 434, 202 424"
+          stroke="#ffffff"
+          strokeWidth="4"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.9"
+        />
+        <path d="M336 300 L 384 340 L 300 400 L 276 330 Z" fill="url(#sail)" />
+        <path
+          d="M336 300 L 300 400 M276 330 L 384 340"
+          stroke="#7c3aed"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+      </g>
+    </svg>
+  );
+}
