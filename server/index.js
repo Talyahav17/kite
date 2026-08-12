@@ -5,12 +5,23 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "./db.js";
 import { scheduleBackups } from "./backup.js";
-import { resolveJwtSecret } from "./secret.js";
+import { resolveJwtSecret, isProduction } from "./secret.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = resolveJwtSecret(); // P-001: never hard-coded; see secret.js
 const COOKIE = "trip_token";
+
+// P-026: `secure` keeps the session cookie off plaintext HTTP. It is only
+// enabled in production — setting it in development would stop the browser
+// sending the cookie over http://localhost, breaking login locally.
+// clearCookie must be given the same attributes or logout fails to clear it.
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: isProduction,
+  path: "/",
+};
 
 app.use(express.json());
 app.use(cookieParser());
@@ -22,8 +33,7 @@ function setAuthCookie(res, user) {
     expiresIn: "30d",
   });
   res.cookie(COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
+    ...COOKIE_OPTIONS,
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 }
@@ -84,7 +94,7 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 app.post("/api/auth/logout", (req, res) => {
-  res.clearCookie(COOKIE);
+  res.clearCookie(COOKIE, COOKIE_OPTIONS);
   res.json({ ok: true });
 });
 
