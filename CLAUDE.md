@@ -44,12 +44,14 @@ Use these exactly in all user-facing surfaces and marketing copy.
 | `ops-engineer` | Operations | Server/DB health, backups, dependencies |
 | `customer-support` | Customer Support | UX friction, copy, ticket triage |
 | `security-officer` | Security | Auth, data protection, vulnerability review |
+| `competitor-analyst` | Business Development | Rival apps, market position, pricing, differentiation |
 
 Run a full company cycle with the `/company` command (see .claude/skills/company).
 
 ## Company records (docs/company/)
 
 - `BACKLOG.md` — prioritized ideas, not yet approved
+- `COMPETITORS.md` — market landscape, maintained by Business Development
 - `DECISIONS.md` — CEO decision log; the single source of truth for what is approved
 - `TICKETS.md` — user-reported issues and feedback
 - `OPS_RUNBOOK.md` — how to run, back up, and restore the app

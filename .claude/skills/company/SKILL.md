@@ -22,8 +22,10 @@ unfinished decisions — finishing those outranks new ideas.
 
 For a routine cycle, produce each department's report yourself in its role
 (cheaper, same governance). Spawn the actual agents (product-manager,
-qa-engineer, ops-engineer, customer-support, security-officer) only when the
-CEO asked for a deep pass on that department or the cycle is focused on it.
+qa-engineer, ops-engineer, customer-support, security-officer,
+competitor-analyst) only when the CEO asked for a deep pass on that department
+or the cycle is focused on it. Business Development reports on a slower
+cadence than the rest — market position changes monthly, not daily.
 
 Each department contributes at most 2 proposals. Departments only propose —
 severity-ranked, smallest-fix-first. Per standing directives P-007 + P-009,
