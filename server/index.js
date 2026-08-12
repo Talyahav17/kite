@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { db } from "./db.js";
 import { scheduleBackups } from "./backup.js";
 import { resolveJwtSecret, isProduction } from "./secret.js";
+import { rateLimit } from "./rateLimit.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -25,6 +26,24 @@ const COOKIE_OPTIONS = {
 
 app.use(express.json());
 app.use(cookieParser());
+
+// ---------- rate limits (P-027) ----------
+
+// Failed logins only — a correct password never spends the budget, so an
+// ordinary user can sign in as often as they like while guessing gets capped.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessful: true,
+  message: "Too many failed sign-in attempts. Please wait a few minutes and try again.",
+});
+
+// Signup is rarer, so this counts every attempt.
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: "Too many accounts created from this network. Please try again later.",
+});
 
 // ---------- auth helpers ----------
 
@@ -60,7 +79,7 @@ function ownedTrip(req, res, tripId) {
 
 // ---------- auth routes ----------
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", registerLimiter, (req, res) => {
   const { email, password, name } = req.body || {};
   if (!email || !password || !name)
     return res.status(400).json({ error: "Name, email and password are required" });
@@ -81,7 +100,7 @@ app.post("/api/auth/register", (req, res) => {
   res.json({ user: { id: user.id, email: user.email, name: user.name } });
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", loginLimiter, (req, res) => {
   const { email, password } = req.body || {};
   const user = db
     .prepare("SELECT * FROM users WHERE email = ?")
