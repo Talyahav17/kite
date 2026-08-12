@@ -5,10 +5,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "./db.js";
 import { scheduleBackups } from "./backup.js";
+import { resolveJwtSecret } from "./secret.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production";
+const JWT_SECRET = resolveJwtSecret(); // P-001: never hard-coded; see secret.js
 const COOKIE = "trip_token";
 
 app.use(express.json());
