@@ -3,6 +3,7 @@ import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
 import { api } from "./api.js";
 import Auth from "./Auth.jsx";
 import KiteLogo from "./KiteLogo.jsx";
+import SharedTrip from "./SharedTrip.jsx";
 import Trips from "./Trips.jsx";
 import TripDetail from "./TripDetail.jsx";
 
@@ -44,15 +45,19 @@ export default function App() {
         )}
       </header>
       <main className="content">
-        {user ? (
-          <Routes>
-            <Route path="/" element={<Trips />} />
-            <Route path="/trips/:id" element={<TripDetail />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        ) : (
-          <Auth />
-        )}
+        <Routes>
+          {/* public: a share link works without an account (P-018) */}
+          <Route path="/s/:token" element={<SharedTrip />} />
+          {user ? (
+            <>
+              <Route path="/" element={<Trips />} />
+              <Route path="/trips/:id" element={<TripDetail />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <Route path="*" element={<Auth />} />
+          )}
+        </Routes>
       </main>
     </UserContext.Provider>
   );

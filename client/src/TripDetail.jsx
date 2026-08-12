@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, ITEM_TYPES, typeMeta } from "./api.js";
+import { api, ITEM_TYPES } from "./api.js";
 import { fmtRange, tripDays } from "./Trips.jsx";
+import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 
 const EMPTY_ITEM = {
   date: "",
@@ -14,14 +15,6 @@ const EMPTY_ITEM = {
   link: "",
 };
 
-function fmtDay(date) {
-  return new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 export default function TripDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,6 +24,8 @@ export default function TripDetail() {
   const [editing, setEditing] = useState(null); // null | item form state
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingItemDelete, setConfirmingItemDelete] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [budgeting, setBudgeting] = useState(null); // null | draft string
   const [error, setError] = useState("");
 
   // P-013: Escape closes the topmost modal
@@ -39,11 +34,13 @@ export default function TripDetail() {
       if (e.key !== "Escape") return;
       if (confirmingItemDelete) setConfirmingItemDelete(false);
       else if (confirmingDelete) setConfirmingDelete(false);
+      else if (sharing) setSharing(false);
+      else if (budgeting !== null) setBudgeting(null);
       else if (editing) setEditing(null);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editing, confirmingDelete, confirmingItemDelete]);
+  }, [editing, confirmingDelete, confirmingItemDelete, sharing, budgeting]);
 
   useEffect(() => {
     api
@@ -118,6 +115,30 @@ export default function TripDetail() {
     navigate("/");
   }
 
+  // P-018
+  async function toggleShare() {
+    if (trip.share_token) {
+      await api.unshareTrip(trip.id);
+      setTrip({ ...trip, share_token: null });
+    } else {
+      const { share_token } = await api.shareTrip(trip.id);
+      setTrip({ ...trip, share_token });
+    }
+  }
+
+  // P-020
+  async function saveBudget(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      const { trip: updated } = await api.updateTrip(trip.id, { budget: budgeting });
+      setTrip(updated);
+      setBudgeting(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   if (notFound)
     return (
       <div className="empty-state">
@@ -148,12 +169,28 @@ export default function TripDetail() {
           </div>
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}
         </div>
-        <button className="btn btn-ghost btn-danger" onClick={() => setConfirmingDelete(true)}>
-          Delete trip
-        </button>
+        <div className="trip-head-actions">
+          <button className="btn btn-small" onClick={() => setSharing(true)}>
+            {trip.share_token ? "🔗 Shared" : "Share"}
+          </button>
+          <button
+            className="btn btn-small"
+            onClick={() => setBudgeting(trip.budget == null ? "" : String(trip.budget))}
+          >
+            {trip.budget == null ? "Set budget" : "Edit budget"}
+          </button>
+          <button
+            className="btn btn-ghost btn-danger btn-small"
+            onClick={() => setConfirmingDelete(true)}
+          >
+            Delete trip
+          </button>
+        </div>
       </div>
 
-      {totalCost > 0 && <BudgetCard items={items} days={days} />}
+      {(totalCost > 0 || trip.budget != null) && (
+        <BudgetCard items={items} days={days} budget={trip.budget} />
+      )}
 
       <div className="days">
         {days.map((date, i) => {
@@ -175,6 +212,7 @@ export default function TripDetail() {
                   + Add
                 </button>
               </div>
+              <DayRoute items={dayItems} />
               {dayItems.length === 0 ? (
                 <button className="day-empty" onClick={() => openAdd(date)}>
                   Nothing planned yet — click to add something
@@ -213,6 +251,88 @@ export default function TripDetail() {
           )}
         </section>
       </div>
+
+      {sharing && (
+        <div className="modal-backdrop" onClick={() => setSharing(false)}>
+          <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
+            <h2>Share this trip</h2>
+            {trip.share_token ? (
+              <>
+                <p className="confirm-text">
+                  Anyone with this link can view the itinerary. They can’t edit it and
+                  don’t need an account.
+                </p>
+                <input
+                  className="share-link"
+                  readOnly
+                  value={`${window.location.origin}/s/${trip.share_token}`}
+                  onFocus={(e) => e.target.select()}
+                />
+                <div className="modal-actions">
+                  <button className="btn btn-ghost btn-danger" onClick={toggleShare}>
+                    Stop sharing
+                  </button>
+                  <span className="spacer" />
+                  <button className="btn btn-primary" onClick={() => setSharing(false)}>
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="confirm-text">
+                  Create a link that lets travel companions see this itinerary — view
+                  only, no account needed. You can turn it off at any time.
+                </p>
+                <div className="modal-actions">
+                  <span className="spacer" />
+                  <button className="btn btn-ghost" onClick={() => setSharing(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={toggleShare}>
+                    Create link
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {budgeting !== null && (
+        <div className="modal-backdrop" onClick={() => setBudgeting(null)}>
+          <form
+            className="modal modal-small card"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={saveBudget}
+          >
+            <h2>Trip budget</h2>
+            <p className="confirm-text">
+              Set a target and Kite tracks what’s left as you plan. Leave it empty to
+              remove the target.
+            </p>
+            <label>
+              Budget ($)
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={budgeting}
+                onChange={(e) => setBudgeting(e.target.value)}
+                autoFocus
+              />
+            </label>
+            {error && <div className="form-error">{error}</div>}
+            <div className="modal-actions">
+              <span className="spacer" />
+              <button type="button" className="btn btn-ghost" onClick={() => setBudgeting(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {confirmingItemDelete && editing && (
         <div
@@ -365,101 +485,5 @@ export default function TripDetail() {
         </div>
       )}
     </div>
-  );
-}
-
-function BudgetCard({ items, days }) {
-  const fmt = (n) =>
-    n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-
-  const byType = new Map();
-  const byDay = new Map();
-  let total = 0;
-  for (const it of items) {
-    if (!it.cost) continue;
-    total += it.cost;
-    byType.set(it.type, (byType.get(it.type) || 0) + it.cost);
-    const key = it.date || "anytime";
-    byDay.set(key, (byDay.get(key) || 0) + it.cost);
-  }
-
-  const typeRows = ITEM_TYPES.filter((t) => byType.has(t.value));
-  const max = Math.max(...byType.values());
-
-  return (
-    <section className="card budget">
-      <div className="budget-head">
-        <h2>Budget</h2>
-        <span className="budget-total">${fmt(total)}</span>
-      </div>
-      <div className="budget-cols">
-        <div>
-          <div className="budget-col-title">By category</div>
-          {typeRows.map((t) => (
-            <div key={t.value} className="budget-row">
-              <span className={`item-badge type-${t.value}`}>
-                {t.emoji} {t.label}
-              </span>
-              <span className="budget-bar-track">
-                <span
-                  className={`budget-bar type-${t.value}`}
-                  style={{ width: `${(byType.get(t.value) / max) * 100}%` }}
-                />
-              </span>
-              <span className="budget-amount">${fmt(byType.get(t.value))}</span>
-            </div>
-          ))}
-        </div>
-        <div>
-          <div className="budget-col-title">By day</div>
-          {days.map(
-            (d, i) =>
-              byDay.has(d) && (
-                <div key={d} className="budget-row">
-                  <span className="budget-day">Day {i + 1}</span>
-                  <span className="budget-amount">${fmt(byDay.get(d))}</span>
-                </div>
-              )
-          )}
-          {byDay.has("anytime") && (
-            <div className="budget-row">
-              <span className="budget-day">Anytime</span>
-              <span className="budget-amount">${fmt(byDay.get("anytime"))}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ItemRow({ item, onEdit }) {
-  const meta = typeMeta(item.type);
-  return (
-    <li className={`item type-border-${item.type}`} onClick={onEdit}>
-      <span className="item-time">{item.time || "—"}</span>
-      <span className={`item-badge type-${item.type}`}>
-        {meta.emoji} {meta.label}
-      </span>
-      <span className="item-main">
-        <span className="item-title">{item.title}</span>
-        {item.location && <span className="item-loc">{item.location}</span>}
-        {item.notes && <span className="item-notes">{item.notes}</span>}
-      </span>
-      <span className="item-right">
-        {item.cost != null && <span className="item-cost">${item.cost.toLocaleString()}</span>}
-        {item.link && (
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="item-link"
-          >
-            ↗
-          </a>
-        )}
-      </span>
-    </li>
   );
 }

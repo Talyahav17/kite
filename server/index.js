@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
@@ -110,7 +111,14 @@ app.get("/api/trips", requireAuth, (req, res) => {
 });
 
 app.post("/api/trips", requireAuth, (req, res) => {
-  const { title, destination = "", start_date, end_date, notes = "" } = req.body || {};
+  const {
+    title,
+    destination = "",
+    start_date,
+    end_date,
+    notes = "",
+    budget = null,
+  } = req.body || {};
   if (!title || !start_date || !end_date)
     return res.status(400).json({ error: "Title, start date and end date are required" });
   if (end_date < start_date)
@@ -118,9 +126,17 @@ app.post("/api/trips", requireAuth, (req, res) => {
 
   const { lastInsertRowid } = db
     .prepare(
-      "INSERT INTO trips (user_id, title, destination, start_date, end_date, notes) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO trips (user_id, title, destination, start_date, end_date, notes, budget) VALUES (?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(req.user.id, title, destination, start_date, end_date, notes);
+    .run(
+      req.user.id,
+      title,
+      destination,
+      start_date,
+      end_date,
+      notes,
+      budget === "" || budget == null ? null : Number(budget)
+    );
   const trip = db.prepare("SELECT * FROM trips WHERE id = ?").get(lastInsertRowid);
   res.status(201).json({ trip });
 });
@@ -139,7 +155,7 @@ app.get("/api/trips/:id", requireAuth, (req, res) => {
 app.put("/api/trips/:id", requireAuth, (req, res) => {
   const trip = ownedTrip(req, res, req.params.id);
   if (!trip) return;
-  const { title, destination, start_date, end_date, notes } = {
+  const { title, destination, start_date, end_date, notes, budget } = {
     ...trip,
     ...req.body,
   };
@@ -148,9 +164,50 @@ app.put("/api/trips/:id", requireAuth, (req, res) => {
   if (end_date < start_date)
     return res.status(400).json({ error: "End date must be on or after the start date" });
   db.prepare(
-    "UPDATE trips SET title = ?, destination = ?, start_date = ?, end_date = ?, notes = ? WHERE id = ?"
-  ).run(title, destination, start_date, end_date, notes, trip.id);
+    "UPDATE trips SET title = ?, destination = ?, start_date = ?, end_date = ?, notes = ?, budget = ? WHERE id = ?"
+  ).run(
+    title,
+    destination,
+    start_date,
+    end_date,
+    notes,
+    budget === "" || budget == null ? null : Number(budget),
+    trip.id
+  );
   res.json({ trip: db.prepare("SELECT * FROM trips WHERE id = ?").get(trip.id) });
+});
+
+// ---------- sharing (P-018) ----------
+
+// Owner turns a share link on / off.
+app.post("/api/trips/:id/share", requireAuth, (req, res) => {
+  const trip = ownedTrip(req, res, req.params.id);
+  if (!trip) return;
+  const token = trip.share_token || crypto.randomBytes(16).toString("hex");
+  db.prepare("UPDATE trips SET share_token = ? WHERE id = ?").run(token, trip.id);
+  res.json({ share_token: token });
+});
+
+app.delete("/api/trips/:id/share", requireAuth, (req, res) => {
+  const trip = ownedTrip(req, res, req.params.id);
+  if (!trip) return;
+  db.prepare("UPDATE trips SET share_token = NULL WHERE id = ?").run(trip.id);
+  res.json({ ok: true });
+});
+
+// Public, read-only. No auth: possession of the 32-char token is the grant.
+// Returns trip content only — never the owner's identity or account details.
+app.get("/api/shared/:token", (req, res) => {
+  const trip = db
+    .prepare("SELECT * FROM trips WHERE share_token = ?")
+    .get(req.params.token);
+  if (!trip) return res.status(404).json({ error: "This shared trip is no longer available" });
+
+  const items = db
+    .prepare("SELECT * FROM items WHERE trip_id = ? ORDER BY date IS NULL, date, time, id")
+    .all(trip.id);
+  const { id, user_id, share_token, ...safe } = trip;
+  res.json({ trip: safe, items });
 });
 
 app.delete("/api/trips/:id", requireAuth, (req, res) => {

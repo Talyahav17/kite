@@ -44,3 +44,20 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id);
   CREATE INDEX IF NOT EXISTS idx_items_trip ON items(trip_id);
 `);
+
+// Columns added after the first release. CREATE TABLE IF NOT EXISTS above will
+// not touch an existing database, so each new column is added here on boot.
+function addColumn(table, column, definition) {
+  const exists = db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all()
+    .some((c) => c.name === column);
+  if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+addColumn("trips", "share_token", "TEXT"); // P-018: read-only share links
+addColumn("trips", "budget", "REAL"); // P-020: target budget for the trip
+
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_trips_share_token ON trips(share_token)"
+);

@@ -22,6 +22,10 @@ export const api = {
   updateTrip: (id, body) => request(`/api/trips/${id}`, { method: "PUT", body }),
   deleteTrip: (id) => request(`/api/trips/${id}`, { method: "DELETE" }),
 
+  shareTrip: (id) => request(`/api/trips/${id}/share`, { method: "POST" }),
+  unshareTrip: (id) => request(`/api/trips/${id}/share`, { method: "DELETE" }),
+  sharedTrip: (token) => request(`/api/shared/${token}`),
+
   createItem: (tripId, body) =>
     request(`/api/trips/${tripId}/items`, { method: "POST", body }),
   updateItem: (id, body) => request(`/api/items/${id}`, { method: "PUT", body }),

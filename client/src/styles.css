@@ -287,12 +287,83 @@ input:focus, textarea:focus, select:focus {
 .type-border-activity { border-left-color: var(--c-activity); }
 .type-border-other { border-left-color: var(--c-other); }
 
+.trip-head-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ---- sharing (P-018) ---- */
+
+.share-link {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+}
+
+.shared-banner {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.shared-footer {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-top: 28px;
+}
+
+.shared-footer a { color: var(--accent); font-weight: 600; }
+
+.item-static { cursor: default; }
+.item-static:hover { background: var(--card); }
+
+/* ---- day route (P-019) ---- */
+
+.day-route {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.83rem;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.day-route-stops { min-width: 0; overflow-x: auto; white-space: nowrap; }
+.day-route-arrow { margin: 0 6px; color: var(--accent); font-weight: 700; }
+.day-route-link { color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.day-route-link:hover { text-decoration: underline; }
+
 /* ---- budget ---- */
 
 .budget { margin-bottom: 20px; }
 
 .budget-head { display: flex; justify-content: space-between; align-items: baseline; }
 .budget-total { font-weight: 700; font-size: 1.15rem; }
+
+/* target budget (P-020) */
+.budget-target { margin: 10px 0 16px; }
+
+.budget-target-bar {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.budget-target-bar span { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+.budget-target.over .budget-target-bar span { background: var(--danger); }
+.budget-target-text { font-size: 0.9rem; color: var(--ink-soft); }
+.budget-target.over .budget-target-text strong { color: var(--danger); }
 
 .budget-cols { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; }
 
