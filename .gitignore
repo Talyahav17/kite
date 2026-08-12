@@ -1,0 +1,6 @@
+node_modules/
+server/trips.db
+server/trips.db-*
+server/backups/
+dist/
+.env
