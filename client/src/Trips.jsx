@@ -27,6 +27,29 @@ export function tripDays(start, end) {
   return days;
 }
 
+export function todayYmd() {
+  return ymd(new Date());
+}
+
+// P-023: where the trip sits relative to today, so a card can say something
+// live rather than just repeating its dates.
+export function tripStatus(start, end) {
+  const today = todayYmd();
+  if (today > end) return { kind: "past", label: "Completed" };
+  if (today >= start) {
+    const days = tripDays(start, end);
+    const n = days.indexOf(today) + 1;
+    return { kind: "now", label: `Day ${n} of ${days.length} · happening now`, live: true };
+  }
+  const diff = Math.round(
+    (new Date(start + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000
+  );
+  if (diff === 0) return { kind: "now", label: "Starts today", live: true };
+  if (diff === 1) return { kind: "soon", label: "Tomorrow" };
+  if (diff <= 30) return { kind: "soon", label: `In ${diff} days` };
+  return { kind: "future", label: `In ${diff} days` };
+}
+
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 
 export default function Trips() {
@@ -53,7 +76,22 @@ export default function Trips() {
     }
   }
 
-  if (!trips) return <div className="page-loading">Loading trips…</div>;
+  if (!trips)
+    return (
+      <div className="trips-page">
+        <div className="page-head">
+          <h1>Your trips</h1>
+        </div>
+        <div className="trip-grid">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card skeleton-card">
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line short" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
 
   return (
     <div className="trips-page">
@@ -118,9 +156,17 @@ export default function Trips() {
       )}
 
       <div className="trip-grid">
-        {trips.map((t) => (
+        {trips.map((t) => {
+          const status = tripStatus(t.start_date, t.end_date);
+          return (
           <Link key={t.id} to={`/trips/${t.id}`} className="card trip-card">
-            <div className="trip-card-title">{t.title}</div>
+            <div className="trip-card-top">
+              <div className="trip-card-title">{t.title}</div>
+              <span className={`trip-countdown ${status.kind}`}>
+                {status.live && <span className="live-dot" />}
+                {status.label}
+              </span>
+            </div>
             {t.destination && <div className="trip-card-dest">📍 {t.destination}</div>}
             <div className="trip-card-dates">{fmtRange(t.start_date, t.end_date)}</div>
             <div className="trip-card-meta">
@@ -128,7 +174,8 @@ export default function Trips() {
               {t.item_count === 1 ? "item" : "items"} planned
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

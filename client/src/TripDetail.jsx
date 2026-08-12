@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ITEM_TYPES } from "./api.js";
-import { fmtRange, tripDays } from "./Trips.jsx";
+import { fmtRange, tripDays, todayYmd, tripStatus } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 
 const EMPTY_ITEM = {
@@ -26,7 +26,13 @@ export default function TripDetail() {
   const [confirmingItemDelete, setConfirmingItemDelete] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [budgeting, setBudgeting] = useState(null); // null | draft string
+  const [toast, setToast] = useState("");
   const [error, setError] = useState("");
+
+  function flash(message) {
+    setToast(message);
+    setTimeout(() => setToast(""), 2400);
+  }
 
   // P-013: Escape closes the topmost modal
   useEffect(() => {
@@ -120,9 +126,21 @@ export default function TripDetail() {
     if (trip.share_token) {
       await api.unshareTrip(trip.id);
       setTrip({ ...trip, share_token: null });
+      flash("Sharing turned off");
     } else {
       const { share_token } = await api.shareTrip(trip.id);
       setTrip({ ...trip, share_token });
+      flash("Share link created");
+    }
+  }
+
+  async function copyShareLink() {
+    const url = `${window.location.origin}/s/${trip.share_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      flash("Link copied to clipboard");
+    } catch {
+      flash("Press ⌘C to copy the selected link");
     }
   }
 
@@ -134,6 +152,7 @@ export default function TripDetail() {
       const { trip: updated } = await api.updateTrip(trip.id, { budget: budgeting });
       setTrip(updated);
       setBudgeting(null);
+      flash(updated.budget == null ? "Budget cleared" : "Budget saved");
     } catch (err) {
       setError(err.message);
     }
@@ -146,9 +165,24 @@ export default function TripDetail() {
         <Link to="/">← Back to trips</Link>
       </div>
     );
-  if (!trip) return <div className="page-loading">Loading…</div>;
+  if (!trip)
+    return (
+      <div className="trip-detail">
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="skeleton skeleton-line" style={{ width: "45%", height: 20 }} />
+          <div className="skeleton skeleton-line short" />
+        </div>
+        <div className="days">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card skeleton-card" />
+          ))}
+        </div>
+      </div>
+    );
 
   const set = (k) => (e) => setEditing({ ...editing, [k]: e.target.value });
+  const status = tripStatus(trip.start_date, trip.end_date);
+  const today = todayYmd();
 
   return (
     <div className="trip-detail">
@@ -165,6 +199,10 @@ export default function TripDetail() {
             <span>
               {days.length} days · {items.length} items
               {totalCost > 0 && ` · $${totalCost.toLocaleString()} planned`}
+            </span>
+            <span className={`trip-countdown ${status.kind}`}>
+              {status.live && <span className="live-dot" />}
+              {status.label}
             </span>
           </div>
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}
@@ -197,11 +235,12 @@ export default function TripDetail() {
           const dayItems = byDay.get(date) || [];
           const cities = dayItems.filter((it) => it.type === "city");
           return (
-            <section key={date} className="day card">
+            <section key={date} className={`day card ${date === today ? "is-today" : ""}`}>
               <div className="day-head">
                 <div>
                   <span className="day-num">Day {i + 1}</span>
                   <span className="day-date">{fmtDay(date)}</span>
+                  {date === today && <span className="day-today-pill">Today</span>}
                   {cities.length > 0 && (
                     <span className="day-cities">
                       {cities.map((c) => c.title).join(" → ")}
@@ -252,6 +291,8 @@ export default function TripDetail() {
         </section>
       </div>
 
+      {toast && <div className="toast">{toast}</div>}
+
       {sharing && (
         <div className="modal-backdrop" onClick={() => setSharing(false)}>
           <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
@@ -273,6 +314,9 @@ export default function TripDetail() {
                     Stop sharing
                   </button>
                   <span className="spacer" />
+                  <button className="btn" onClick={copyShareLink}>
+                    Copy link
+                  </button>
                   <button className="btn btn-primary" onClick={() => setSharing(false)}>
                     Done
                   </button>
