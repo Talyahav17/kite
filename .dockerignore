@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+client/dist
+.git
+.github
+docs
+.claude
+CLAUDE.md
+
+# never bake state or secrets into an image
+server/.env
+server/trips.db
+server/trips.db-*
+server/backups

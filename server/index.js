@@ -1,4 +1,7 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
@@ -11,6 +14,13 @@ import { cityCover, coversEnabled, noteUsed } from "./covers.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || (isProduction ? "0.0.0.0" : "127.0.0.1");
+
+// Behind Fly's proxy every request arrives from the proxy's address. Without
+// this, req.ip is identical for everyone and one visitor hitting the login
+// limiter would lock out the entire internet. It also lets Express see that
+// the original request was HTTPS, which the Secure cookie depends on.
+if (isProduction || process.env.KITE_TRUST_PROXY) app.set("trust proxy", 1);
 const JWT_SECRET = resolveJwtSecret(); // P-001: never hard-coded; see secret.js
 const COOKIE = "trip_token";
 
@@ -481,7 +491,56 @@ app.get("/api/cover", requireAuth, async (req, res) => {
   res.status(204).end(); // a photo is never worth failing a page over
 });
 
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
+// ---------- health ----------
+//
+// Deliberately cheap and unauthenticated: the platform calls it constantly.
+// It touches the database, because a process that is up but cannot read its
+// data is not actually healthy.
+app.get("/healthz", (req, res) => {
+  try {
+    db.prepare("SELECT 1").get();
+    res.json({ ok: true, db: "ok" });
+  } catch (err) {
+    res.status(503).json({ ok: false, db: err.message });
+  }
+});
+
+// ---------- the client, in production ----------
+//
+// One process serves both, so there is no CORS, no second service, and the
+// cookie is same-origin. In development Vite serves the client and proxies
+// /api here instead, so this block stays out of the way.
+if (isProduction) {
+  const clientDist = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../client/dist"
+  );
+
+  if (fs.existsSync(clientDist)) {
+    // hashed asset filenames may be cached hard; index.html must not be
+    app.use(
+      express.static(clientDist, {
+        index: false,
+        setHeaders(res, filePath) {
+          if (filePath.endsWith(".html")) res.setHeader("Cache-Control", "no-cache");
+          else res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        },
+      })
+    );
+
+    // Client-side routes (/trips/1, /s/<token>) must survive a refresh, but an
+    // unknown /api path should still 404 rather than quietly return the page.
+    app.get(/^(?!\/api\/).*/, (req, res) => {
+      res.sendFile(path.join(clientDist, "index.html"));
+    });
+  } else {
+    console.warn(`No client build at ${clientDist} — serving the API only.`);
+  }
+}
+
+app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
+
+app.listen(PORT, HOST, () => {
+  console.log(`Kite listening on http://${HOST}:${PORT}`);
   scheduleBackups(); // P-014: on boot, then daily
 });

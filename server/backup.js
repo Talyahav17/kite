@@ -9,8 +9,12 @@ import { fileURLToPath } from "node:url";
 
 const KEEP = 14;
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const db = path.join(dir, "trips.db");
-const backupDir = path.join(dir, "backups");
+
+// Backups follow the database onto the mounted volume — writing them into the
+// container instead would mean the backups vanish with the next deploy.
+const dataDir = process.env.KITE_DATA_DIR || dir;
+const db = process.env.KITE_DB || path.join(dataDir, "trips.db");
+const backupDir = path.join(dataDir, "backups");
 
 export function runBackup() {
   if (!fs.existsSync(db)) throw new Error(`No database found at ${db}`);

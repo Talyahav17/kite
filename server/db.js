@@ -5,9 +5,14 @@ import { SEED_ATTRACTIONS, CITY_COUNTRY } from "./seed-attractions.js";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
+// Where durable state lives. In production this is a mounted volume (/data on
+// Fly) — a container's own filesystem is wiped on every deploy, so a SQLite
+// file written beside the code would silently lose every trip on release.
+export const dataDir = process.env.KITE_DATA_DIR || dir;
+
 // KITE_DB lets the test suite point at a throwaway file. Without it the app
 // always uses the real database, so tests can never touch production data.
-export const dbPath = process.env.KITE_DB || path.join(dir, "trips.db");
+export const dbPath = process.env.KITE_DB || path.join(dataDir, "trips.db");
 export const db = new DatabaseSync(dbPath);
 
 db.exec(`

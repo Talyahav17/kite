@@ -45,6 +45,7 @@ Use these exactly in all user-facing surfaces and marketing copy.
 | `customer-support` | Customer Support | UX friction, copy, ticket triage |
 | `security-officer` | Security | Auth, data protection, vulnerability review |
 | `competitor-analyst` | Business Development | Rival apps, market position, pricing, differentiation |
+| `release-engineer` | Release | Deploys, Fly.io app and volume, secrets, health of the live site |
 | `tester-casual` | User Testing ("Maya") | Onboarding, empty states, whether a non-technical user can start |
 | `tester-planner` | User Testing ("Daniel") | Depth, data-entry speed, budget arithmetic, spreadsheet comparison |
 | `tester-group` | User Testing ("Priya") | Sharing, the public read-only view, in-trip phone use |

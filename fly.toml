@@ -1,0 +1,48 @@
+# Fly.io configuration for Kite.
+#
+# Two things here are load-bearing:
+#
+#   1. The [mounts] volume. Kite stores everything in a SQLite file, and a
+#      container's own filesystem is destroyed on every deploy — without this
+#      volume, every trip disappears the next time you ship.
+#
+#   2. auto_stop_machines. Kite's backups run on a timer inside the process, so
+#      a machine that sleeps stops backing up. It is set to stop anyway (it is
+#      far cheaper, and nothing is lost), but see the runbook: run
+#      `npm run backup` before maintenance rather than trusting the timer.
+#
+# A single machine is correct for now. SQLite is one writer, and the rate
+# limiter counts in memory per process — a second machine would split both.
+
+app = "kite"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  KITE_DATA_DIR = "/data"
+  PORT = "8080"
+
+[mounts]
+  source = "kite_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
