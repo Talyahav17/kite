@@ -24,6 +24,15 @@ export default function SkyPanel() {
           <stop offset="0" stopColor="#ffffff" stopOpacity="0.5" />
           <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
+        <mask id="sky-cut">
+          <path d="M336 300 L 384 340 L 300 400 L 276 330 Z" fill="#fff" />
+          <path
+            d="M336 300 L 300 400 M276 330 L 384 340"
+            stroke="#000"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+        </mask>
       </defs>
 
       <rect width="520" height="620" fill="url(#sky-bg)" />
@@ -72,14 +81,11 @@ export default function SkyPanel() {
           strokeLinecap="round"
           fill="none"
         />
-        <path d="M336 300 L 384 340 L 300 400 L 276 330 Z" fill="url(#sail)" />
-        <path
-          d="M336 300 L 300 400 M276 330 L 384 340"
-          stroke="#7c3aed"
-          strokeWidth="2"
-          strokeLinecap="round"
-          opacity="0.55"
-        />
+        {/* same language as the mark: two tones, spars cut out not painted */}
+        <g mask="url(#sky-cut)">
+          <path d="M336 300 L 276 330 L 300 400 Z" fill="#ffffff" />
+          <path d="M336 300 L 384 340 L 300 400 Z" fill="#e4d3fb" />
+        </g>
       </g>
     </svg>
   );

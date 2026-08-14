@@ -1,7 +1,13 @@
 <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M32 3 L7 27 L32 27 Z" fill="#a855f7"/>
-  <path d="M32 3 L57 27 L32 27 Z" fill="#8b14dd"/>
-  <path d="M7 27 L32 61 L32 27 Z" fill="#7a0fd0"/>
-  <path d="M57 27 L32 61 L32 27 Z" fill="#5b0fa0"/>
-  <path d="M32 61 C 33 65, 29 67, 26 71" stroke="#7a0fd0" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <defs>
+    <mask id="kite-cut">
+      <path d="M32 3 L57 27 L32 61 L7 27 Z" fill="#fff"/>
+      <path d="M32 3 L32 61 M7 27 L57 27" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g mask="url(#kite-cut)">
+    <path d="M32 3 L7 27 L32 61 Z" fill="#a855f7"/>
+    <path d="M32 3 L57 27 L32 61 Z" fill="#6d10bd"/>
+  </g>
+  <path d="M32 61 C 33 65, 29 67, 26 71" stroke="#6d10bd" stroke-width="2.4" stroke-linecap="round" fill="none"/>
 </svg>

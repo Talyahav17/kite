@@ -34,7 +34,7 @@ export default function Auth() {
         <SkyPanel />
         <div className="auth-art-copy">
           <div className="auth-art-brand">
-            <KiteLogo size={26} /> Kite
+            <KiteLogo size={26} variant="reverse" /> Kite
           </div>
           <h2>Your next trip is in the air.</h2>
           <p>
