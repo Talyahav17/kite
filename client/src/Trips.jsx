@@ -76,9 +76,8 @@ function CoverPhoto({ city }) {
   return (
     <>
       <img className="trip-cover-photo" src={cover.url} alt={cover.alt} loading="lazy" />
-      <span className="cover-credit">
-        {cover.photographer} / Unsplash
-      </span>
+      {/* both sources oblige us to name the photographer wherever it shows */}
+      <span className="cover-credit">{cover.credit}</span>
     </>
   );
 }
@@ -255,7 +254,7 @@ export default function Trips() {
           return (
             <Link key={t.id} to={`/trips/${t.id}`} className="trip-card">
               <div className="trip-cover" style={coverStyle(t.id)}>
-                <CoverPhoto city={t.destination} />
+                <CoverPhoto city={t.destination || t.title} />
                 <span className={`trip-countdown on-cover ${status.kind}`}>
                   {status.live && <span className="live-dot" />}
                   {status.label}

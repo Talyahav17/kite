@@ -4,7 +4,7 @@ import { api } from "./api.js";
 import Auth from "./Auth.jsx";
 import Trips from "./Trips.jsx";
 import TripDetail from "./TripDetail.jsx";
-import KiteLockup from "./KiteLockup.jsx";
+import KiteLogo from "./KiteLogo.jsx";
 import SharedTrip from "./SharedTrip.jsx";
 
 const UserContext = createContext(null);
@@ -45,7 +45,7 @@ export default function App() {
     <UserContext.Provider value={{ user, setUser }}>
       <header className="topbar">
         <Link to="/" className="brand" aria-label="Kite — home">
-          <KiteLockup height={34} />
+          <KiteLogo height={54} />
         </Link>
         {user && (
           <div className="topbar-right">

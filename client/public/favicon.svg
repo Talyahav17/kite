@@ -1,13 +1,16 @@
-<svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- The sail alone, cropped from the logo artwork — a full lockup is illegible
+     at 16px. Geometry and colours match KiteLogo.jsx exactly. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="128 52 96 140">
   <defs>
-    <mask id="kite-cut">
-      <path d="M32 3 L57 27 L32 61 L7 27 Z" fill="#fff"/>
-      <path d="M32 3 L32 61 M7 27 L57 27" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-    </mask>
+    <linearGradient id="p" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9B00E8"/><stop offset="60%" stop-color="#7500C0"/><stop offset="100%" stop-color="#550099"/>
+    </linearGradient>
+    <linearGradient id="f" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B833FF"/><stop offset="100%" stop-color="#8000D4"/>
+    </linearGradient>
   </defs>
-  <g mask="url(#kite-cut)">
-    <path d="M32 3 L7 27 L32 61 Z" fill="#a855f7"/>
-    <path d="M32 3 L57 27 L32 61 Z" fill="#6d10bd"/>
-  </g>
-  <path d="M32 61 C 33 65, 29 67, 26 71" stroke="#6d10bd" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M 180,60 L 135,115 L 180,185 L 180,60 Z" fill="url(#f)"/>
+  <path d="M 180,60 L 225,115 L 180,185 L 180,60 Z" fill="url(#p)"/>
+  <path d="M 180,60 L 180,185" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 135,115 L 225,115" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
 </svg>

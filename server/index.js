@@ -417,22 +417,63 @@ app.post("/api/attractions/:id/rate", requireAuth, (req, res) => {
   res.json({ attraction: { ...summary, your_rating: stars } });
 });
 
-// P-032: a cover photo for a city. Returns 204 when Unsplash isn't configured,
-// which the client treats as "keep the gradient" rather than an error.
-app.get("/api/cover", requireAuth, async (req, res) => {
-  const city = String(req.query.city || "").trim();
-  if (!city) return res.status(400).json({ error: "A city is required" });
-  if (!coversEnabled()) return res.status(204).end();
+// P-039: a cover photo for a trip, matched to where it goes.
+//
+// Two sources, tried in order. Unsplash gives the prettier, more generic
+// travel shot but needs a key. Falling back to our own attraction photos means
+// a trip to Italy wears a real photograph of somewhere in Italy — already
+// licensed, already credited, and it works with no key at all. Failing both,
+// 204 tells the client to keep its gradient.
+function localCover(place) {
+  const key = place.trim().toLowerCase();
+  const row = db
+    .prepare(
+      `SELECT name, city, image_url, image_artist, image_license, image_page,
+              (SELECT AVG(stars) FROM ratings r WHERE r.attraction_id = a.id) AS avg_stars
+       FROM attractions a
+       WHERE image_url IS NOT NULL AND (city_key = ? OR country_key = ?)
+       ORDER BY avg_stars IS NULL, avg_stars DESC, id
+       LIMIT 1`
+    )
+    .get(key, key);
+  if (!row) return null;
 
-  try {
-    const cover = await cityCover(city);
-    if (!cover) return res.status(204).end();
-    noteUsed(cover.download_location);
-    const { download_location, ...safe } = cover;
-    res.json({ cover: safe });
-  } catch {
-    res.status(204).end(); // a photo is never worth failing a page over
+  return {
+    url: row.image_url,
+    alt: `${row.name}, ${row.city}`,
+    credit: `${row.name} · ${row.image_artist} (${row.image_license})`,
+    credit_url: row.image_page,
+    source: "wikimedia",
+  };
+}
+
+app.get("/api/cover", requireAuth, async (req, res) => {
+  const place = String(req.query.city || "").trim();
+  if (!place) return res.status(400).json({ error: "A place is required" });
+
+  if (coversEnabled()) {
+    try {
+      const cover = await cityCover(place);
+      if (cover) {
+        noteUsed(cover.download_location);
+        const { download_location, ...safe } = cover;
+        return res.json({
+          cover: {
+            ...safe,
+            credit: `${safe.photographer} / Unsplash`,
+            credit_url: safe.photographer_url,
+            source: "unsplash",
+          },
+        });
+      }
+    } catch {
+      /* fall through to the local photo */
+    }
   }
+
+  const local = localCover(place);
+  if (local) return res.json({ cover: local });
+  res.status(204).end(); // a photo is never worth failing a page over
 });
 
 app.listen(PORT, () => {

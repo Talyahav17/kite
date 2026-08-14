@@ -1,58 +1,151 @@
-// Kite mark (P-036) — the CEO's pick: the two-tone fold of direction 4 with
-// the spars cut clean through as negative space, from direction 3.
+// Kite logo (P-038) — the CEO's artwork, geometry preserved as supplied.
+// The string leaves the sail, loops below, and runs up into the K.
 //
-// The cross is punched out with a mask rather than painted white, so it is
-// genuinely transparent: the same mark sits on the white header and on the
-// purple sign-in panel without needing a second drawing.
-const DIAMOND = "M32 3 L57 27 L32 61 L7 27 Z";
-const LEFT = "M32 3 L7 27 L32 61 Z";
-const RIGHT = "M32 3 L57 27 L32 61 Z";
-
-const PALETTE = {
-  brand: { light: "#a855f7", dark: "#6d10bd", tail: "#6d10bd" },
-  reverse: { light: "#ffffff", dark: "#ddc4f7", tail: "#ffffff" },
+// Changes from the supplied source, all mechanical rather than design:
+//   • showCard defaults to false — the presentation card belongs on a brand
+//     sheet, not in the app chrome.
+//   • Sized by HEIGHT with the width derived, and the viewBox cropped to the
+//     artwork. Sizing by width overflowed the header bar, because the loop
+//     makes the drawing nearly square.
+//   • Gradient ids are per-instance; they were global, so the reversed copy on
+//     the sign-in panel would repaint the header one.
+//   • A reverse palette for dark backgrounds.
+const PALETTES = {
+  brand: {
+    from: "#9B00E8",
+    mid: "#7500C0",
+    to: "#550099",
+    faceFrom: "#B833FF",
+    faceTo: "#8000D4",
+    spar: "#FFFFFF",
+    sparOpacity: 0.85,
+  },
+  reverse: {
+    from: "#FFFFFF",
+    mid: "#F3E6FF",
+    to: "#DCC0F7",
+    faceFrom: "#FFFFFF",
+    faceTo: "#E6D2FB",
+    spar: "#7500C0",
+    sparOpacity: 0.5,
+  },
 };
 
-export default function KiteLogo({ size = 30, animate = true, variant = "brand" }) {
-  const c = PALETTE[variant] || PALETTE.brand;
-  const maskId = `kite-cut-${variant}`;
+// measured from the rendered artwork with getBBox, plus breathing room
+const CROP = { x: 230, y: 128, w: 442, h: 367 };
+const ASPECT = { card: 900 / 500, bare: CROP.w / CROP.h };
+
+let seq = 0;
+
+export default function KiteLogo({
+  height = 46,
+  className = "",
+  showCard = false,
+  variant = "brand",
+  animate = false,
+}) {
+  const c = PALETTES[variant] || PALETTES.brand;
+  const uid = `k${(seq = (seq + 1) % 10000)}`;
+  const purple = `vibrantPurple-${uid}`;
+  const face = `kiteFaceLight-${uid}`;
+  const width = Math.round(height * (showCard ? ASPECT.card : ASPECT.bare));
 
   return (
-    <svg
-      width={size}
-      height={size * (72 / 64)}
-      viewBox="0 0 64 72"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={animate ? "kite-mark kite-mark-animate" : "kite-mark"}
-      aria-hidden="true"
-    >
-      <defs>
-        {/* white shows the sail, black punches the spars back out of it */}
-        <mask id={maskId}>
-          <path d={DIAMOND} fill="#fff" />
+    <div className={className} style={{ display: "inline-block", lineHeight: 0 }}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox={showCard ? "0 0 900 500" : `${CROP.x} ${CROP.y} ${CROP.w} ${CROP.h}`}
+        width={width}
+        height={height}
+        role="img"
+        aria-label="Kite"
+        className={animate ? "kite-art kite-art-animate" : "kite-art"}
+      >
+        <defs>
+          <linearGradient id={purple} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={c.from} />
+            <stop offset="60%" stopColor={c.mid} />
+            <stop offset="100%" stopColor={c.to} />
+          </linearGradient>
+
+          <linearGradient id={face} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={c.faceFrom} />
+            <stop offset="100%" stopColor={c.faceTo} />
+          </linearGradient>
+
+          <filter id={`cardShadow-${uid}`} x="-10%" y="-10%" width="120%" height="130%">
+            <feDropShadow dx="0" dy="6" stdDeviation="12" floodColor="#000000" floodOpacity="0.08" />
+          </filter>
+        </defs>
+
+        {showCard && (
+          <>
+            <rect width="900" height="500" fill="#F6F7F9" />
+            <rect
+              x="80"
+              y="50"
+              width="740"
+              height="400"
+              rx="12"
+              fill="#FFFFFF"
+              filter={`url(#cardShadow-${uid})`}
+            />
+          </>
+        )}
+
+        <g transform="translate(190, 80)">
+          {/* sail */}
+          <g className="kite-sail">
+            <path d="M 180,60 L 135,115 L 180,185 L 180,60 Z" fill={`url(#${face})`} />
+            <path d="M 180,60 L 225,115 L 180,185 L 180,60 Z" fill={`url(#${purple})`} />
+            <path
+              d="M 180,60 L 180,185"
+              stroke={c.spar}
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              opacity={c.sparOpacity}
+            />
+            <path
+              d="M 135,115 L 225,115"
+              stroke={c.spar}
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              opacity={c.sparOpacity}
+            />
+          </g>
+
+          {/* string, curving into the K */}
           <path
-            d="M32 3 L32 61 M7 27 L57 27"
-            stroke="#000"
-            strokeWidth="3"
+            d="M 180,185
+               C 175,230 110,250 80,280
+               C 40,320 45,385 85,400
+               C 135,415 190,370 215,315
+               C 230,280 245,260 270,245"
+            fill="none"
+            stroke={`url(#${purple})`}
+            strokeWidth="16"
             strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        </mask>
-      </defs>
 
-      <g className="kite-body" mask={`url(#${maskId})`}>
-        <path d={LEFT} fill={c.light} />
-        <path d={RIGHT} fill={c.dark} />
-      </g>
-
-      <path
-        className="kite-tail"
-        d="M32 61 C 33 65, 29 67, 26 71"
-        stroke={c.tail}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
+          <text
+            x="240"
+            y="310"
+            fill={`url(#${purple})`}
+            style={{
+              fontFamily:
+                'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontSize: "128px",
+              fontWeight: "800",
+              letterSpacing: "-2px",
+            }}
+          >
+            Kite
+          </text>
+        </g>
+      </svg>
+    </div>
   );
 }
+
+export { KiteLogo };
