@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "./api.js";
 import { useUser } from "./App.jsx";
 import SkyPanel from "./SkyPanel.jsx";
-import KiteLogo from "./KiteLogo.jsx";
+import KiteLockup from "./KiteLockup.jsx";
 
 export default function Auth() {
   const { setUser } = useUser();
@@ -34,7 +34,7 @@ export default function Auth() {
         <SkyPanel />
         <div className="auth-art-copy">
           <div className="auth-art-brand">
-            <KiteLogo size={26} variant="reverse" /> Kite
+            <KiteLockup height={34} variant="reverse" />
           </div>
           <h2>Your next trip is in the air.</h2>
           <p>
