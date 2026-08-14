@@ -45,6 +45,14 @@ Use these exactly in all user-facing surfaces and marketing copy.
 | `customer-support` | Customer Support | UX friction, copy, ticket triage |
 | `security-officer` | Security | Auth, data protection, vulnerability review |
 | `competitor-analyst` | Business Development | Rival apps, market position, pricing, differentiation |
+| `tester-casual` | User Testing ("Maya") | Onboarding, empty states, whether a non-technical user can start |
+| `tester-planner` | User Testing ("Daniel") | Depth, data-entry speed, budget arithmetic, spreadsheet comparison |
+| `tester-group` | User Testing ("Priya") | Sharing, the public read-only view, in-trip phone use |
+
+The three testers are **simulated users, not real ones**. They are good at finding
+friction, dead ends and confusing copy; they cannot tell you whether anyone
+actually wants Kite. Never report their output as evidence of user demand.
+They run one at a time — they drive the same browser.
 
 Run a full company cycle with the `/company` command (see .claude/skills/company).
 

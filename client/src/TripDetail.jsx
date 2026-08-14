@@ -25,6 +25,7 @@ export default function TripDetail() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingItemDelete, setConfirmingItemDelete] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [confirmingUnshare, setConfirmingUnshare] = useState(false);
   const [budgeting, setBudgeting] = useState(null); // null | draft string
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
@@ -40,13 +41,14 @@ export default function TripDetail() {
       if (e.key !== "Escape") return;
       if (confirmingItemDelete) setConfirmingItemDelete(false);
       else if (confirmingDelete) setConfirmingDelete(false);
+      else if (confirmingUnshare) setConfirmingUnshare(false); // back out, don't revoke
       else if (sharing) setSharing(false);
       else if (budgeting !== null) setBudgeting(null);
       else if (editing) setEditing(null);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editing, confirmingDelete, confirmingItemDelete, sharing, budgeting]);
+  }, [editing, confirmingDelete, confirmingItemDelete, sharing, confirmingUnshare, budgeting]);
 
   useEffect(() => {
     api
@@ -122,16 +124,19 @@ export default function TripDetail() {
   }
 
   // P-018
-  async function toggleShare() {
-    if (trip.share_token) {
-      await api.unshareTrip(trip.id);
-      setTrip({ ...trip, share_token: null });
-      flash("Sharing turned off");
-    } else {
-      const { share_token } = await api.shareTrip(trip.id);
-      setTrip({ ...trip, share_token });
-      flash("Share link created");
-    }
+  async function startSharing() {
+    const { share_token } = await api.shareTrip(trip.id);
+    setTrip({ ...trip, share_token });
+    flash("Share link created");
+  }
+
+  // P-030: only ever reached through the confirmation step — revoking is
+  // permanent for links already sent, since re-sharing mints a new token.
+  async function stopSharing() {
+    await api.unshareTrip(trip.id);
+    setTrip({ ...trip, share_token: null });
+    setConfirmingUnshare(false);
+    flash("Sharing turned off — the old link no longer works");
   }
 
   async function copyShareLink() {
@@ -294,11 +299,38 @@ export default function TripDetail() {
       {toast && <div className="toast">{toast}</div>}
 
       {sharing && (
-        <div className="modal-backdrop" onClick={() => setSharing(false)}>
+        <div
+          className="modal-backdrop"
+          onClick={() => {
+            setSharing(false);
+            setConfirmingUnshare(false);
+          }}
+        >
           <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
-            <h2>Share this trip</h2>
-            {trip.share_token ? (
+            {confirmingUnshare ? (
               <>
+                <h2>Stop sharing “{trip.title}”?</h2>
+                <p className="confirm-text">
+                  Everyone holding the current link loses access straight away. If you
+                  share again later the link will be <strong>different</strong> — the one
+                  you already sent stays dead.
+                </p>
+                <div className="modal-actions">
+                  <span className="spacer" />
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => setConfirmingUnshare(false)}
+                  >
+                    Keep sharing
+                  </button>
+                  <button className="btn btn-danger-solid" onClick={stopSharing}>
+                    Stop sharing
+                  </button>
+                </div>
+              </>
+            ) : trip.share_token ? (
+              <>
+                <h2>Share this trip</h2>
                 <p className="confirm-text">
                   Anyone with this link can view the itinerary. They can’t edit it and
                   don’t need an account.
@@ -310,9 +342,6 @@ export default function TripDetail() {
                   onFocus={(e) => e.target.select()}
                 />
                 <div className="modal-actions">
-                  <button className="btn btn-ghost btn-danger" onClick={toggleShare}>
-                    Stop sharing
-                  </button>
                   <span className="spacer" />
                   <button className="btn" onClick={copyShareLink}>
                     Copy link
@@ -321,9 +350,17 @@ export default function TripDetail() {
                     Done
                   </button>
                 </div>
+                {/* kept away from the dismiss buttons — T-005 */}
+                <button
+                  className="btn-link btn-link-danger"
+                  onClick={() => setConfirmingUnshare(true)}
+                >
+                  Stop sharing this trip
+                </button>
               </>
             ) : (
               <>
+                <h2>Share this trip</h2>
                 <p className="confirm-text">
                   Create a link that lets travel companions see this itinerary — view
                   only, no account needed. You can turn it off at any time.
@@ -333,7 +370,7 @@ export default function TripDetail() {
                   <button className="btn btn-ghost" onClick={() => setSharing(false)}>
                     Cancel
                   </button>
-                  <button className="btn btn-primary" onClick={toggleShare}>
+                  <button className="btn btn-primary" onClick={startSharing}>
                     Create link
                   </button>
                 </div>
