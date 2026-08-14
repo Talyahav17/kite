@@ -30,11 +30,16 @@ app.use(cookieParser());
 
 // ---------- rate limits (P-027) ----------
 
+// Limits are env-tunable so the test suite can raise them (a run creates far
+// more accounts than a person ever would) and lower them to prove the limiter
+// actually fires. Defaults are the production values.
+const limitFor = (name, fallback) => Number(process.env[name]) || fallback;
+
 // Failed logins only — a correct password never spends the budget, so an
 // ordinary user can sign in as often as they like while guessing gets capped.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: limitFor("KITE_LOGIN_LIMIT", 10),
   skipSuccessful: true,
   message: "Too many failed sign-in attempts. Please wait a few minutes and try again.",
 });
@@ -42,7 +47,7 @@ const loginLimiter = rateLimit({
 // Signup is rarer, so this counts every attempt.
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: limitFor("KITE_REGISTER_LIMIT", 5),
   message: "Too many accounts created from this network. Please try again later.",
 });
 

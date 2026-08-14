@@ -5,7 +5,8 @@
     "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "backup": "node server/backup.js",
     "photos": "node server/fetch-photos.js",
-    "install-all": "npm install && npm install --prefix server && npm install --prefix client"
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client",
+    "test": "node --test server/test/*.test.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

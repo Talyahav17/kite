@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 import { SEED_ATTRACTIONS, CITY_COUNTRY } from "./seed-attractions.js";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-export const db = new DatabaseSync(path.join(dir, "trips.db"));
+
+// KITE_DB lets the test suite point at a throwaway file. Without it the app
+// always uses the real database, so tests can never touch production data.
+export const dbPath = process.env.KITE_DB || path.join(dir, "trips.db");
+export const db = new DatabaseSync(dbPath);
 
 db.exec(`
   PRAGMA journal_mode = WAL;
