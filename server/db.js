@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { SEED_ATTRACTIONS } from "./seed-attractions.js";
+import { SEED_ATTRACTIONS, CITY_COUNTRY } from "./seed-attractions.js";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 export const db = new DatabaseSync(path.join(dir, "trips.db"));
@@ -71,17 +71,6 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_ratings_attraction ON ratings(attraction_id);
 `);
 
-// Seed the starter places once. Insert-or-ignore keeps this safe on every boot
-// and never overwrites a row a user has already rated.
-{
-  const insert = db.prepare(
-    "INSERT OR IGNORE INTO attractions (name, city, city_key, type) VALUES (?, ?, ?, ?)"
-  );
-  for (const [name, city, type] of SEED_ATTRACTIONS) {
-    insert.run(name, city, city.trim().toLowerCase(), type);
-  }
-}
-
 // Columns added after the first release. CREATE TABLE IF NOT EXISTS above will
 // not touch an existing database, so each new column is added here on boot.
 function addColumn(table, column, definition) {
@@ -103,6 +92,31 @@ addColumn("attractions", "image_artist", "TEXT");
 addColumn("attractions", "image_license", "TEXT");
 addColumn("attractions", "image_license_url", "TEXT");
 addColumn("attractions", "image_page", "TEXT");
+
+// T-007: a trip labelled "France" should still surface Paris.
+addColumn("attractions", "country", "TEXT");
+addColumn("attractions", "country_key", "TEXT");
+
+// Seed the starter places. Runs after the migrations above, so every column it
+// writes exists. Insert-or-ignore keeps it safe on each boot and never
+// overwrites a row a user has already rated.
+{
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO attractions (name, city, city_key, type, country, country_key)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  );
+  const backfill = db.prepare(
+    "UPDATE attractions SET country = ?, country_key = ? WHERE city_key = ? AND country IS NULL"
+  );
+  for (const [name, city, type] of SEED_ATTRACTIONS) {
+    const country = CITY_COUNTRY[city] || "";
+    insert.run(name, city, city.trim().toLowerCase(), type, country, country.toLowerCase());
+  }
+  // rows seeded before the country columns existed
+  for (const [city, country] of Object.entries(CITY_COUNTRY)) {
+    backfill.run(country, country.toLowerCase(), city.toLowerCase());
+  }
+}
 
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_trips_share_token ON trips(share_token)"

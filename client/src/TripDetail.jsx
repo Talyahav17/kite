@@ -4,6 +4,21 @@ import { api, ITEM_TYPES } from "./api.js";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 import { Suggestions } from "./Suggestions.jsx";
+import ImportItems from "./ImportItems.jsx";
+
+// T-006: the server returns items sorted, but local edits only replace an
+// element in place — so moving an item to another day left it wherever it
+// happened to sit until a reload. Re-sort after every change, matching the
+// server's order exactly: dated first, then by date, then time, then id.
+function sortItems(list) {
+  return [...list].sort(
+    (a, b) =>
+      (a.date === null) - (b.date === null) ||
+      (a.date || "").localeCompare(b.date || "") ||
+      (a.time || "").localeCompare(b.time || "") ||
+      a.id - b.id
+  );
+}
 
 const EMPTY_ITEM = {
   date: "",
@@ -27,6 +42,7 @@ export default function TripDetail() {
   const [confirmingItemDelete, setConfirmingItemDelete] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [confirmingUnshare, setConfirmingUnshare] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [budgeting, setBudgeting] = useState(null); // null | draft string
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
@@ -95,16 +111,31 @@ export default function TripDetail() {
     });
   }
 
+  // P-033: "add another" keeps the dialog open with the day and category
+  // intact, so a five-item day costs one dialog instead of five.
+  async function saveAndAddAnother(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      const { item } = await api.createItem(trip.id, editing);
+      setItems(sortItems([...items, item]));
+      setEditing({ ...EMPTY_ITEM, date: editing.date, type: editing.type });
+      flash(`Added “${item.title}”`);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function saveItem(e) {
     e.preventDefault();
     setError("");
     try {
       if (editing.id) {
         const { item } = await api.updateItem(editing.id, editing);
-        setItems(items.map((i) => (i.id === item.id ? item : i)));
+        setItems(sortItems(items.map((i) => (i.id === item.id ? item : i))));
       } else {
         const { item } = await api.createItem(trip.id, editing);
-        setItems([...items, item]);
+        setItems(sortItems([...items, item]));
       }
       setEditing(null);
     } catch (err) {
@@ -214,6 +245,9 @@ export default function TripDetail() {
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}
         </div>
         <div className="trip-head-actions">
+          <button className="btn btn-small" onClick={() => setImporting(true)}>
+            Paste plan
+          </button>
           <button className="btn btn-small" onClick={() => setSharing(true)}>
             {trip.share_token ? "🔗 Shared" : "Share"}
           </button>
@@ -307,6 +341,19 @@ export default function TripDetail() {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+
+      {importing && (
+        <ImportItems
+          tripId={trip.id}
+          days={days}
+          onClose={() => setImporting(false)}
+          onImported={(created) => {
+            setItems((prev) => sortItems([...prev, ...created]));
+            setImporting(false);
+            flash(`Added ${created.length} ${created.length === 1 ? "item" : "items"}`);
+          }}
+        />
+      )}
 
       {sharing && (
         <div
@@ -570,6 +617,11 @@ export default function TripDetail() {
               <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>
                 Cancel
               </button>
+              {!editing.id && (
+                <button type="button" className="btn" onClick={saveAndAddAnother}>
+                  Add another
+                </button>
+              )}
               <button className="btn btn-primary">{editing.id ? "Save" : "Add"}</button>
             </div>
           </form>

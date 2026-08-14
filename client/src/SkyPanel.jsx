@@ -45,31 +45,32 @@ export default function SkyPanel() {
         <path d="M-40 590 Q 260 490 560 590" />
       </g>
 
-      {/* route line with stops */}
+      {/* Route between two stops on the ground. It deliberately stops short of
+          the kite — the string is the solid curve below, not this. */}
       <g className="sky-route">
         <path
-          d="M70 520 C 150 470, 200 430, 300 400"
+          d="M60 545 C 130 512, 190 498, 250 486"
           stroke="#ffffff"
           strokeWidth="2.5"
           strokeDasharray="7 9"
           strokeLinecap="round"
           fill="none"
-          opacity="0.85"
+          opacity="0.55"
         />
-        <circle cx="70" cy="520" r="7" fill="#ffffff" />
-        <circle cx="300" cy="400" r="7" fill="#ffffff" />
+        <circle cx="60" cy="545" r="6" fill="#ffffff" opacity="0.75" />
+        <circle cx="250" cy="486" r="6" fill="#ffffff" opacity="0.75" />
       </g>
 
       {/* the kite, mid-flight */}
       <g className="sky-kite">
+        {/* the string: the one line that actually meets the kite */}
         <path
-          d="M300 400 C 288 430, 250 452, 218 448 C 190 444, 182 418, 202 406
-             C 218 396, 236 410, 228 424 C 221 436, 204 434, 202 424"
+          d="M300 400 C 286 434, 252 458, 216 452 C 186 447, 178 416, 200 404
+             C 218 394, 236 410, 226 424 C 218 435, 202 432, 200 422"
           stroke="#ffffff"
-          strokeWidth="4"
+          strokeWidth="4.5"
           strokeLinecap="round"
           fill="none"
-          opacity="0.9"
         />
         <path d="M336 300 L 384 340 L 300 400 L 276 330 Z" fill="url(#sail)" />
         <path

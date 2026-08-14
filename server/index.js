@@ -331,14 +331,15 @@ app.get("/api/suggestions", requireAuth, (req, res) => {
   const city = String(req.query.city || "").trim().toLowerCase();
   if (!city) return res.status(400).json({ error: "A city is required" });
 
+  // Match a city or a country, so a trip labelled "France" still finds Paris.
   const rows = db
     .prepare(
       `${ratingSummary}
-       WHERE a.city_key = ?
+       WHERE a.city_key = ? OR a.country_key = ?
        GROUP BY a.id
        ORDER BY rating_count = 0, avg_stars DESC, rating_count DESC, a.name`
     )
-    .all(city);
+    .all(city, city);
 
   const mine = db
     .prepare(

@@ -4,22 +4,48 @@ import { useEffect, useState } from "react";
 import { api, typeMeta } from "./api.js";
 import { Stars, StarPicker } from "./Stars.jsx";
 
-// The cities this trip actually touches: its city items, else its destination.
+// Every place this trip might touch. City items are the strongest signal, but
+// a multi-city trip is usually typed into the destination field as a list
+// ("France, Netherlands, Germany" / "Rome & Florence"), which as one string
+// matches nothing — so split it and treat each part as a candidate too. T-007.
 export function citiesOf(trip, items) {
-  const fromItems = items.filter((i) => i.type === "city").map((i) => i.title.trim());
-  const unique = [...new Set(fromItems)];
-  if (unique.length) return unique;
-  return trip.destination ? [trip.destination.trim()] : [];
+  const fromItems = items.filter((i) => i.type === "city").map((i) => i.title);
+  const fromDestination = (trip.destination || "").split(/[,/&]|\band\b|→|->/);
+  return [...new Set([...fromItems, ...fromDestination].map((c) => c.trim()).filter(Boolean))];
 }
 
 export function Suggestions({ trip, items, onAdd }) {
-  const cities = citiesOf(trip, items);
-  const [city, setCity] = useState(cities[0] || "");
+  const candidates = citiesOf(trip, items).join("|");
+  const [known, setKnown] = useState(null); // cities we actually have places for
+  const [city, setCity] = useState("");
   const [list, setList] = useState(null);
 
+  // Ask about every candidate and keep the ones that come back with places, so
+  // a country ("France") silently drops out while its cities stay. T-007.
   useEffect(() => {
-    if (!cities.includes(city) && cities.length) setCity(cities[0]);
-  }, [trip.id, items.length]);
+    const list = candidates.split("|").filter(Boolean);
+    if (list.length === 0) {
+      setKnown([]);
+      return;
+    }
+    let live = true;
+    Promise.all(
+      list.map((c) =>
+        api
+          .suggestions(c)
+          .then((d) => (d.suggestions.length ? c : null))
+          .catch(() => null)
+      )
+    ).then((res) => {
+      if (!live) return;
+      const usable = res.filter(Boolean);
+      setKnown(usable);
+      setCity((current) => (usable.includes(current) ? current : usable[0] || ""));
+    });
+    return () => {
+      live = false;
+    };
+  }, [candidates]);
 
   useEffect(() => {
     if (!city) return;
@@ -30,6 +56,7 @@ export function Suggestions({ trip, items, onAdd }) {
       .catch(() => setList([]));
   }, [city]);
 
+  const cities = known || [];
   if (!city) return null;
   if (list && list.length === 0) return null;
 

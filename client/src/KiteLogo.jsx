@@ -1,56 +1,42 @@
-// Official Kite mark (P-022), traced from the CEO-supplied artwork: a tilted
-// violet sail with curved white spars and a crescent highlight, and a single
-// ribbon tail that passes under the sail, loops below-left, and rises back to
-// the sail's tether point.
+// Kite mark (P-034).
 //
-// NOTE: this is a hand-traced vector of the supplied image, not the original
-// asset. Save the source file to client/public/ for a pixel-exact swap.
-const SAIL = "M74 2 L90 29 L51 55 L44 25 Z";
+// Deliberately geometric rather than illustrative: a diamond sail folded into
+// four facets that catch the light differently, and a single restrained tail
+// stroke. The earlier version drew a cartoon kite with a looping curl, which
+// read as childish at small sizes and fought the rest of the interface.
+const SAIL_TOP = "M32 3 L57 27 L32 27 Z";
+const SAIL_LEFT = "M32 3 L7 27 L32 27 Z";
+const SAIL_LOWER_LEFT = "M7 27 L32 61 L32 27 Z";
+const SAIL_LOWER_RIGHT = "M57 27 L32 61 L32 27 Z";
 
-export default function KiteLogo({ size = 38, animate = true }) {
+export default function KiteLogo({ size = 30, animate = true }) {
   return (
     <svg
       width={size}
-      height={size * (110 / 96)}
-      viewBox="0 0 96 110"
+      height={size * (72 / 64)}
+      viewBox="0 0 64 72"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={animate ? "kite-mark kite-mark-animate" : "kite-mark"}
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id="kite-sail" x1="44" y1="2" x2="88" y2="52">
-          <stop offset="0" stopColor="#a21cef" />
-          <stop offset="1" stopColor="#7a0fd0" />
-        </linearGradient>
-        {/* keeps the spars inside the sail, as in the artwork */}
-        <clipPath id="kite-clip">
-          <path d={SAIL} />
-        </clipPath>
-      </defs>
+      <g className="kite-body">
+        {/* four facets, lit from the upper left */}
+        <path d={SAIL_LEFT} fill="#a855f7" />
+        <path d={SAIL_TOP} fill="#8b14dd" />
+        <path d={SAIL_LOWER_LEFT} fill="#7a0fd0" />
+        <path d={SAIL_LOWER_RIGHT} fill="#5b0fa0" />
+      </g>
 
-      {/* tail: one ribbon — under the sail, around the loop, back to the tether */}
+      {/* tail: one calm stroke, no curl */}
       <path
         className="kite-tail"
-        d="M74 52
-           C 60 57, 46 59, 33 65
-           C 16 73, 3 85, 7 96
-           C 11 105, 26 106, 34 96
-           C 42 86, 41 72, 51 55"
+        d="M32 61 C 33 65, 29 67, 26 71"
         stroke="#7a0fd0"
-        strokeWidth="4.6"
+        strokeWidth="2.4"
         strokeLinecap="round"
         fill="none"
       />
-
-      <g className="kite-body">
-        <path d={SAIL} fill="url(#kite-sail)" />
-        <g clipPath="url(#kite-clip)" stroke="#ffffff" fill="none" strokeLinecap="round">
-          <path d="M73 5 C 64 23, 56 39, 51 54" strokeWidth="2.2" />
-          <path d="M46 26 C 60 33, 74 33, 86 29" strokeWidth="2.2" />
-          <path d="M72 6 C 80 17, 83 28, 81 41" strokeWidth="2.4" />
-        </g>
-      </g>
     </svg>
   );
 }

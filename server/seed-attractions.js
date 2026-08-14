@@ -4,6 +4,19 @@
 // or scores are copied from anyone: every score Kite ever shows is computed
 // from its own users' ratings. That is deliberate, and it is what keeps this
 // feature free of third-party licence terms.
+// Trips are often labelled by country ("France, Netherlands, Germany") rather
+// than city, so each city carries its country and suggestions match either.
+export const CITY_COUNTRY = {
+  Rome: "Italy",
+  Florence: "Italy",
+  Lisbon: "Portugal",
+  Paris: "France",
+  Barcelona: "Spain",
+  Tokyo: "Japan",
+  London: "United Kingdom",
+  Amsterdam: "Netherlands",
+};
+
 export const SEED_ATTRACTIONS = [
   // Rome
   ["Colosseum", "Rome", "attraction"],

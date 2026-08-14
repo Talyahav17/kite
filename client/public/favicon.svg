@@ -1,16 +1,7 @@
-<svg viewBox="0 0 96 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="kite-sail" x1="44" y1="2" x2="88" y2="52">
-      <stop offset="0" stop-color="#a21cef"/>
-      <stop offset="1" stop-color="#7a0fd0"/>
-    </linearGradient>
-    <clipPath id="kite-clip"><path d="M74 2 L90 29 L51 55 L44 25 Z"/></clipPath>
-  </defs>
-  <path d="M74 52 C 60 57, 46 59, 33 65 C 16 73, 3 85, 7 96 C 11 105, 26 106, 34 96 C 42 86, 41 72, 51 55" stroke="#7a0fd0" stroke-width="4.6" stroke-linecap="round" fill="none"/>
-  <path d="M74 2 L90 29 L51 55 L44 25 Z" fill="url(#kite-sail)"/>
-  <g clip-path="url(#kite-clip)" stroke="#ffffff" fill="none" stroke-linecap="round">
-    <path d="M73 5 C 64 23, 56 39, 51 54" stroke-width="2.2"/>
-    <path d="M46 26 C 60 33, 74 33, 86 29" stroke-width="2.2"/>
-    <path d="M72 6 C 80 17, 83 28, 81 41" stroke-width="2.4"/>
-  </g>
+<svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M32 3 L7 27 L32 27 Z" fill="#a855f7"/>
+  <path d="M32 3 L57 27 L32 27 Z" fill="#8b14dd"/>
+  <path d="M7 27 L32 61 L32 27 Z" fill="#7a0fd0"/>
+  <path d="M57 27 L32 61 L32 27 Z" fill="#5b0fa0"/>
+  <path d="M32 61 C 33 65, 29 67, 26 71" stroke="#7a0fd0" stroke-width="2.4" stroke-linecap="round" fill="none"/>
 </svg>

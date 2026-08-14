@@ -84,16 +84,16 @@ h2 { font-size: 1.15rem; margin: 0 0 12px; }
   z-index: 10;
 }
 
-/* wordmark: heavy and rounded, to sit with the mark as one lockup */
+/* Wordmark: a tight geometric sans rather than the rounded face used before —
+   the rounded one read as playful next to the new faceted mark (P-034). */
 .brand {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-family: ui-rounded, "SF Pro Rounded", "Avenir Next Rounded",
-    "Nunito", "Avenir Next", system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 1.45rem;
-  letter-spacing: -0.03em;
+  gap: 8px;
+  font-family: "Helvetica Neue", Inter, system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  font-size: 1.32rem;
+  letter-spacing: -0.035em;
   text-decoration: none;
   color: var(--accent-deep);
 }
@@ -561,13 +561,21 @@ input:focus, textarea:focus, select:focus {
 /* ---- the mark in flight ---- */
 
 .kite-mark { overflow: visible; }
-.kite-mark-animate .kite-body {
-  transform-origin: 51px 55px; /* the tail vertex — the sail pivots on its tether */
-  animation: kite-sway 7s ease-in-out infinite;
-}
+
+/* A restrained sway — the mark is geometric now, so big motion looks wrong. */
+.kite-mark-animate .kite-body,
 .kite-mark-animate .kite-tail {
-  transform-origin: 51px 55px;
-  animation: kite-tail-wave 7s ease-in-out infinite;
+  transform-origin: 32px 61px; /* the tail vertex: the sail pivots on its tether */
+  animation: kite-sway 9s ease-in-out infinite;
+}
+
+@keyframes kite-sway-subtle {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.kite-mark-animate .kite-body, .kite-mark-animate .kite-tail {
+  animation-name: kite-sway-subtle;
 }
 .brand:hover .kite-mark-animate .kite-body { animation-duration: 2.2s; }
 .brand:hover .kite-mark-animate .kite-tail { animation-duration: 2.2s; }
@@ -831,6 +839,26 @@ input:focus, textarea:focus, select:focus {
 @media (max-width: 560px) {
   .suggestion, .prompt { flex-wrap: wrap; }
 }
+
+/* ---- paste import (P-033) ---- */
+
+.import-box {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.import-preview {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 12px 0 16px;
+  font-size: 0.85rem;
+}
+
+.import-preview-head { font-weight: 700; margin-bottom: 6px; }
+.import-preview ul { list-style: none; margin: 0; padding: 0; color: var(--ink-soft); }
+.import-preview li { padding: 2px 0; }
 
 /* ---- modal ---- */
 
