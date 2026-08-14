@@ -53,6 +53,36 @@ export function tripStatus(start, end) {
   return { kind: "future", label: `In ${diff} days` };
 }
 
+// P-032: an Unsplash photo layered over the gradient when one is available.
+// The gradient stays underneath, so a missing key, a failed request or a slow
+// network degrades to the cover Kite already had rather than an empty box.
+// Unsplash requires their photographer to be credited wherever the photo shows.
+function CoverPhoto({ city }) {
+  const [cover, setCover] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    if (!city) return;
+    api
+      .cover(city)
+      .then((c) => live && setCover(c))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [city]);
+
+  if (!cover?.url) return null;
+  return (
+    <>
+      <img className="trip-cover-photo" src={cover.url} alt={cover.alt} loading="lazy" />
+      <span className="cover-credit">
+        {cover.photographer} / Unsplash
+      </span>
+    </>
+  );
+}
+
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 
 const FILTERS = [
@@ -225,6 +255,7 @@ export default function Trips() {
           return (
             <Link key={t.id} to={`/trips/${t.id}`} className="trip-card">
               <div className="trip-cover" style={coverStyle(t.id)}>
+                <CoverPhoto city={t.destination} />
                 <span className={`trip-countdown on-cover ${status.kind}`}>
                   {status.live && <span className="live-dot" />}
                   {status.label}

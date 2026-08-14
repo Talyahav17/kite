@@ -95,6 +95,15 @@ function addColumn(table, column, definition) {
 addColumn("trips", "share_token", "TEXT"); // P-018: read-only share links
 addColumn("trips", "budget", "REAL"); // P-020: target budget for the trip
 
+// P-032: photo of the place, from Wikimedia Commons. The attribution columns
+// are not optional decoration — CC BY-SA requires crediting the photographer
+// and naming the licence wherever the image is shown.
+addColumn("attractions", "image_url", "TEXT");
+addColumn("attractions", "image_artist", "TEXT");
+addColumn("attractions", "image_license", "TEXT");
+addColumn("attractions", "image_license_url", "TEXT");
+addColumn("attractions", "image_page", "TEXT");
+
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_trips_share_token ON trips(share_token)"
 );

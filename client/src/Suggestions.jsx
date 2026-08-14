@@ -59,6 +59,13 @@ export function Suggestions({ trip, items, onAdd }) {
         Rated by Kite travellers who have been. Add one and we’ll ask what you
         thought when you’re back.
       </p>
+      <p className="photo-credit">
+        Photos from{" "}
+        <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">
+          Wikimedia Commons
+        </a>{" "}
+        — hover a photo for its photographer and licence.
+      </p>
 
       {!list ? (
         <div className="skeleton skeleton-line" style={{ width: "60%" }} />
@@ -68,6 +75,23 @@ export function Suggestions({ trip, items, onAdd }) {
             const meta = typeMeta(s.type);
             return (
               <li key={s.id} className="suggestion">
+                {s.image_url ? (
+                  // CC BY-SA requires the credit to travel with the image, so it
+                  // lives in the title and on the link out to the source page.
+                  <a
+                    className="suggestion-photo"
+                    href={s.image_page}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`${s.image_artist} · ${s.image_license} (via Wikimedia Commons)`}
+                  >
+                    <img src={s.image_url} alt="" loading="lazy" />
+                  </a>
+                ) : (
+                  <span className="suggestion-photo suggestion-photo-empty">
+                    {meta.emoji}
+                  </span>
+                )}
                 <span className={`item-badge type-${s.type}`}>
                   {meta.emoji} {meta.label}
                 </span>

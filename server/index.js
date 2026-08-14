@@ -7,6 +7,7 @@ import { db } from "./db.js";
 import { scheduleBackups } from "./backup.js";
 import { resolveJwtSecret, isProduction } from "./secret.js";
 import { rateLimit } from "./rateLimit.js";
+import { cityCover, coversEnabled, noteUsed } from "./covers.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -318,6 +319,7 @@ app.delete("/api/items/:id", requireAuth, (req, res) => {
 
 const ratingSummary = `
   SELECT a.id, a.name, a.city, a.type,
+         a.image_url, a.image_artist, a.image_license, a.image_license_url, a.image_page,
          ROUND(AVG(r.stars), 2) AS avg_stars,
          COUNT(r.id) AS rating_count
   FROM attractions a
@@ -412,6 +414,24 @@ app.post("/api/attractions/:id/rate", requireAuth, (req, res) => {
     .prepare(`${ratingSummary} WHERE a.id = ? GROUP BY a.id`)
     .get(attraction.id);
   res.json({ attraction: { ...summary, your_rating: stars } });
+});
+
+// P-032: a cover photo for a city. Returns 204 when Unsplash isn't configured,
+// which the client treats as "keep the gradient" rather than an error.
+app.get("/api/cover", requireAuth, async (req, res) => {
+  const city = String(req.query.city || "").trim();
+  if (!city) return res.status(400).json({ error: "A city is required" });
+  if (!coversEnabled()) return res.status(204).end();
+
+  try {
+    const cover = await cityCover(city);
+    if (!cover) return res.status(204).end();
+    noteUsed(cover.download_location);
+    const { download_location, ...safe } = cover;
+    res.json({ cover: safe });
+  } catch {
+    res.status(204).end(); // a photo is never worth failing a page over
+  }
 });
 
 app.listen(PORT, () => {

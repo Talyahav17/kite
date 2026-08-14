@@ -27,6 +27,14 @@ export const api = {
   sharedTrip: (token) => request(`/api/shared/${token}`),
 
   suggestions: (city) => request(`/api/suggestions?city=${encodeURIComponent(city)}`),
+  // 204 means Unsplash isn't configured — callers fall back to gradient covers.
+  cover: async (city) => {
+    const res = await fetch(`/api/cover?city=${encodeURIComponent(city)}`, {
+      credentials: "same-origin",
+    });
+    if (res.status !== 200) return null;
+    return (await res.json()).cover;
+  },
   pendingRatings: () => request("/api/ratings/pending"),
   rateAttraction: (id, body) =>
     request(`/api/attractions/${id}/rate`, { method: "POST", body }),
