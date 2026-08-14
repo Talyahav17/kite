@@ -741,6 +741,60 @@ input:focus, textarea:focus, select:focus {
   .budget-cols { grid-template-columns: 1fr; }
 }
 
+/* ---- suggestions & ratings (P-031) ---- */
+
+.suggestions, .rating-prompts { margin-bottom: 20px; }
+
+.suggestions-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.suggestions-head select { width: auto; margin: 0; padding: 5px 8px; font-size: 0.88rem; }
+.suggestions-sub { color: var(--ink-soft); font-size: 0.88rem; margin: 2px 0 14px; }
+
+.suggestion-list, .prompt-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.suggestion, .prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.suggestion-name, .prompt-name { flex: 1; font-weight: 600; min-width: 0; }
+.prompt-name { display: flex; flex-direction: column; }
+.prompt-where { font-weight: 400; font-size: 0.82rem; color: var(--ink-soft); }
+
+.stars { display: inline-flex; align-items: baseline; gap: 5px; font-size: 0.85rem; white-space: nowrap; }
+.stars-marks { color: #f59e0b; letter-spacing: 1px; }
+.stars-dim { color: var(--line); }
+.stars-value { font-weight: 700; }
+.stars-count { color: var(--ink-soft); }
+.stars-none { font-size: 0.82rem; color: var(--ink-soft); font-style: italic; white-space: nowrap; }
+
+.star-picker { display: inline-flex; gap: 2px; }
+
+.star-btn {
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--line);
+  padding: 0 1px;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.star-btn:hover:not(:disabled), .star-btn.on { color: #f59e0b; }
+.star-btn:hover:not(:disabled) { transform: scale(1.15); }
+.star-picker:hover .star-btn { color: #f59e0b; }
+.star-picker .star-btn:hover ~ .star-btn { color: var(--line); }
+.star-btn:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 560px) {
+  .suggestion, .prompt { flex-wrap: wrap; }
+}
+
 /* ---- modal ---- */
 
 .modal-backdrop {

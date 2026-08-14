@@ -1,6 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SEED_ATTRACTIONS } from "./seed-attractions.js";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 export const db = new DatabaseSync(path.join(dir, "trips.db"));
@@ -43,7 +44,43 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id);
   CREATE INDEX IF NOT EXISTS idx_items_trip ON items(trip_id);
+
+  -- P-031: places Kite can suggest, and what its own users thought of them.
+  -- Every score shown is computed from the ratings table below; no third-party
+  -- rating is ever stored here.
+  CREATE TABLE IF NOT EXISTS attractions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    city TEXT NOT NULL,
+    city_key TEXT NOT NULL,              -- lowercased city, for matching
+    type TEXT NOT NULL DEFAULT 'attraction',
+    UNIQUE(name, city_key)
+  );
+
+  CREATE TABLE IF NOT EXISTS ratings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attraction_id INTEGER NOT NULL REFERENCES attractions(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    stars INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5),
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(attraction_id, user_id)       -- one rating per person per place
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_attractions_city ON attractions(city_key);
+  CREATE INDEX IF NOT EXISTS idx_ratings_attraction ON ratings(attraction_id);
 `);
+
+// Seed the starter places once. Insert-or-ignore keeps this safe on every boot
+// and never overwrites a row a user has already rated.
+{
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO attractions (name, city, city_key, type) VALUES (?, ?, ?, ?)"
+  );
+  for (const [name, city, type] of SEED_ATTRACTIONS) {
+    insert.run(name, city, city.trim().toLowerCase(), type);
+  }
+}
 
 // Columns added after the first release. CREATE TABLE IF NOT EXISTS above will
 // not touch an existing database, so each new column is added here on boot.

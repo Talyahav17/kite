@@ -26,6 +26,11 @@ export const api = {
   unshareTrip: (id) => request(`/api/trips/${id}/share`, { method: "DELETE" }),
   sharedTrip: (token) => request(`/api/shared/${token}`),
 
+  suggestions: (city) => request(`/api/suggestions?city=${encodeURIComponent(city)}`),
+  pendingRatings: () => request("/api/ratings/pending"),
+  rateAttraction: (id, body) =>
+    request(`/api/attractions/${id}/rate`, { method: "POST", body }),
+
   createItem: (tripId, body) =>
     request(`/api/trips/${tripId}/items`, { method: "POST", body }),
   updateItem: (id, body) => request(`/api/items/${id}`, { method: "PUT", body }),

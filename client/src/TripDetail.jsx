@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ITEM_TYPES } from "./api.js";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
+import { Suggestions } from "./Suggestions.jsx";
 
 const EMPTY_ITEM = {
   date: "",
@@ -234,6 +235,15 @@ export default function TripDetail() {
       {(totalCost > 0 || trip.budget != null) && (
         <BudgetCard items={items} days={days} budget={trip.budget} />
       )}
+
+      <Suggestions
+        trip={trip}
+        items={items}
+        onAdd={({ title, type }) => {
+          setError("");
+          setEditing({ ...EMPTY_ITEM, title, type, date: days[0] || "" });
+        }}
+      />
 
       <div className="days">
         {days.map((date, i) => {

@@ -310,6 +310,110 @@ app.delete("/api/items/:id", requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- suggestions & ratings (P-031) ----------
+//
+// Scores are computed live from Kite's own ratings. Responses are aggregate
+// only — never who rated what — so one user's history is not exposed to
+// another. The caller's own rating is included, because it is theirs.
+
+const ratingSummary = `
+  SELECT a.id, a.name, a.city, a.type,
+         ROUND(AVG(r.stars), 2) AS avg_stars,
+         COUNT(r.id) AS rating_count
+  FROM attractions a
+  LEFT JOIN ratings r ON r.attraction_id = a.id
+`;
+
+// What should I see in this city? Best-rated first, unrated last.
+app.get("/api/suggestions", requireAuth, (req, res) => {
+  const city = String(req.query.city || "").trim().toLowerCase();
+  if (!city) return res.status(400).json({ error: "A city is required" });
+
+  const rows = db
+    .prepare(
+      `${ratingSummary}
+       WHERE a.city_key = ?
+       GROUP BY a.id
+       ORDER BY rating_count = 0, avg_stars DESC, rating_count DESC, a.name`
+    )
+    .all(city);
+
+  const mine = db
+    .prepare(
+      `SELECT attraction_id, stars FROM ratings WHERE user_id = ? AND attraction_id IN
+       (SELECT id FROM attractions WHERE city_key = ?)`
+    )
+    .all(req.user.id, city);
+  const myStars = new Map(mine.map((m) => [m.attraction_id, m.stars]));
+
+  res.json({
+    city,
+    suggestions: rows.map((r) => ({ ...r, your_rating: myStars.get(r.id) ?? null })),
+  });
+});
+
+// Places the user has already been (item date in the past) that they have not
+// rated yet — the "how was it?" prompt.
+app.get("/api/ratings/pending", requireAuth, (req, res) => {
+  // Real itineraries say "Colosseum & Forum", not "Colosseum", and their
+  // destination is often a country ("Italy") rather than the city. So match
+  // the place name *within* the item title, and accept the city either from
+  // the trip's destination or from any city item on the trip.
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT a.id, a.name, a.city, a.type, i.date, i.title AS item_title,
+              t.title AS trip_title
+       FROM items i
+       JOIN trips t ON t.id = i.trip_id
+       JOIN attractions a ON (
+              LOWER(TRIM(i.title)) = LOWER(a.name)
+           OR (LENGTH(a.name) >= 5 AND INSTR(LOWER(i.title), LOWER(a.name)) > 0)
+       )
+       WHERE t.user_id = ?
+         AND i.date IS NOT NULL
+         AND i.date < date('now')
+         AND (
+              a.city_key = LOWER(TRIM(t.destination))
+           OR EXISTS (
+                SELECT 1 FROM items c
+                WHERE c.trip_id = t.id AND c.type = 'city'
+                  AND LOWER(TRIM(c.title)) = a.city_key
+              )
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM ratings r WHERE r.attraction_id = a.id AND r.user_id = ?
+         )
+       ORDER BY i.date DESC
+       LIMIT 10`
+    )
+    .all(req.user.id, req.user.id);
+  res.json({ pending: rows });
+});
+
+// Rate a place. One rating per person per place; re-rating replaces it.
+app.post("/api/attractions/:id/rate", requireAuth, (req, res) => {
+  const attraction = db
+    .prepare("SELECT * FROM attractions WHERE id = ?")
+    .get(req.params.id);
+  if (!attraction) return res.status(404).json({ error: "Place not found" });
+
+  const stars = Number(req.body?.stars);
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5)
+    return res.status(400).json({ error: "A rating must be between 1 and 5 stars" });
+
+  db.prepare(
+    `INSERT INTO ratings (attraction_id, user_id, stars, note) VALUES (?, ?, ?, ?)
+     ON CONFLICT(attraction_id, user_id)
+     DO UPDATE SET stars = excluded.stars, note = excluded.note,
+                   created_at = datetime('now')`
+  ).run(attraction.id, req.user.id, stars, String(req.body?.note || ""));
+
+  const summary = db
+    .prepare(`${ratingSummary} WHERE a.id = ? GROUP BY a.id`)
+    .get(attraction.id);
+  res.json({ attraction: { ...summary, your_rating: stars } });
+});
+
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
   scheduleBackups(); // P-014: on boot, then daily

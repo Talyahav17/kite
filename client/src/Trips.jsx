@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "./api.js";
 import { coverStyle } from "./covers.js";
 import { useUser } from "./App.jsx";
+import { RatingPrompts } from "./Suggestions.jsx";
 
 export function fmtRange(start, end) {
   const opts = { month: "short", day: "numeric" };
@@ -139,6 +140,8 @@ export default function Trips() {
           {showForm ? "Cancel" : "+ New trip"}
         </button>
       </div>
+
+      <RatingPrompts />
 
       {trips.length > 0 && (
         <div className="chip-row">
