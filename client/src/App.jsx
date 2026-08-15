@@ -7,7 +7,7 @@ import TripDetail from "./TripDetail.jsx";
 import KiteLogo from "./KiteLogo.jsx";
 import SharedTrip from "./SharedTrip.jsx";
 
-const UserContext = createContext(null);
+export const UserContext = createContext(null);
 export const useUser = () => useContext(UserContext);
 
 export default function App() {

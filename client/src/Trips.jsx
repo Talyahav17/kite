@@ -37,6 +37,37 @@ function CoverPhoto({ city }) {
   );
 }
 
+// One trip on the list. Split out so it can be rendered directly in a test —
+// the page shows skeletons until data arrives, so a fault in here (T-009 was a
+// component that no longer existed) never appeared in a render of the page.
+export function TripCard({ trip }) {
+  const status = tripStatus(trip.start_date, trip.end_date);
+  const days = tripDays(trip.start_date, trip.end_date).length;
+
+  return (
+    <Link to={`/trips/${trip.id}`} className="trip-card">
+      <div className="trip-cover" style={coverStyle(trip.id)}>
+        <CoverPhoto city={trip.destination || trip.title} />
+        <span className={`trip-countdown on-cover ${status.kind}`}>
+          {status.live && <span className="live-dot" />}
+          {status.label}
+        </span>
+        <div className="trip-cover-text">
+          <div className="trip-card-title">{trip.title}</div>
+          {trip.destination && <div className="trip-card-dest">{trip.destination}</div>}
+        </div>
+      </div>
+      <div className="trip-card-body">
+        <span className="trip-card-dates">{fmtRange(trip.start_date, trip.end_date)}</span>
+        <span className="trip-card-meta">
+          {days} {days === 1 ? "day" : "days"} · {trip.item_count}{" "}
+          {trip.item_count === 1 ? "item" : "items"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 
 const FILTERS = [
@@ -203,36 +234,9 @@ export default function Trips() {
       )}
 
       <div className="trip-grid">
-        {visible.map((t) => {
-          const status = tripStatus(t.start_date, t.end_date);
-          const days = tripDays(t.start_date, t.end_date).length;
-          return (
-            <Link key={t.id} to={`/trips/${t.id}`} className="trip-card">
-              <div className="trip-cover" style={coverStyle(t.id)}>
-                <CoverPhoto city={t.destination || t.title} />
-                <span className={`trip-countdown on-cover ${status.kind}`}>
-                  {status.live && <span className="live-dot" />}
-                  {status.label}
-                </span>
-                <div className="trip-cover-text">
-                  <div className="trip-card-title">{t.title}</div>
-                  {t.destination && (
-                    <div className="trip-card-dest">{t.destination}</div>
-                  )}
-                </div>
-              </div>
-              <div className="trip-card-body">
-                <span className="trip-card-dates">
-                  {fmtRange(t.start_date, t.end_date)}
-                </span>
-                <span className="trip-card-meta">
-                  {days} {days === 1 ? "day" : "days"} · {t.item_count}{" "}
-                  {t.item_count === 1 ? "item" : "items"}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
+        {visible.map((t) => (
+          <TripCard key={t.id} trip={t} />
+        ))}
       </div>
     </div>
   );
