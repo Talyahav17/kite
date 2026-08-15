@@ -4,83 +4,10 @@ import { api } from "./api.js";
 import { coverStyle } from "./covers.js";
 import { useUser } from "./App.jsx";
 import { RatingPrompts } from "./Suggestions.jsx";
+import { fmtRange, tripDays, todayYmd, tripStatus } from "./lib/dates.js";
 
-export function fmtRange(start, end) {
-  const opts = { month: "short", day: "numeric" };
-  const s = new Date(start + "T00:00:00");
-  const e = new Date(end + "T00:00:00");
-  const year = e.getFullYear() !== new Date().getFullYear() ? `, ${e.getFullYear()}` : "";
-  return `${s.toLocaleDateString("en-US", opts)} – ${e.toLocaleDateString("en-US", opts)}${year}`;
-}
-
-// Formats in local time — toISOString would shift the date in timezones ahead of UTC.
-function ymd(d) {
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-export function tripDays(start, end) {
-  const days = [];
-  const d = new Date(start + "T00:00:00");
-  const stop = new Date(end + "T00:00:00");
-  while (d <= stop && days.length < 120) {
-    days.push(ymd(d));
-    d.setDate(d.getDate() + 1);
-  }
-  return days;
-}
-
-export function todayYmd() {
-  return ymd(new Date());
-}
-
-// P-023: where the trip sits relative to today, so a card can say something
-// live rather than just repeating its dates.
-export function tripStatus(start, end) {
-  const today = todayYmd();
-  if (today > end) return { kind: "past", label: "Completed" };
-  if (today >= start) {
-    const days = tripDays(start, end);
-    const n = days.indexOf(today) + 1;
-    return { kind: "now", label: `Day ${n} of ${days.length} · happening now`, live: true };
-  }
-  const diff = Math.round(
-    (new Date(start + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000
-  );
-  if (diff === 0) return { kind: "now", label: "Starts today", live: true };
-  if (diff === 1) return { kind: "soon", label: "Tomorrow" };
-  if (diff <= 30) return { kind: "soon", label: `In ${diff} days` };
-  return { kind: "future", label: `In ${diff} days` };
-}
-
-// P-032: an Unsplash photo layered over the gradient when one is available.
-// The gradient stays underneath, so a missing key, a failed request or a slow
-// network degrades to the cover Kite already had rather than an empty box.
-// Unsplash requires their photographer to be credited wherever the photo shows.
-function CoverPhoto({ city }) {
-  const [cover, setCover] = useState(null);
-
-  useEffect(() => {
-    let live = true;
-    if (!city) return;
-    api
-      .cover(city)
-      .then((c) => live && setCover(c))
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [city]);
-
-  if (!cover?.url) return null;
-  return (
-    <>
-      <img className="trip-cover-photo" src={cover.url} alt={cover.alt} loading="lazy" />
-      {/* both sources oblige us to name the photographer wherever it shows */}
-      <span className="cover-credit">{cover.credit}</span>
-    </>
-  );
-}
+// re-exported so the pages that grew up importing them from here still work
+export { fmtRange, tripDays, todayYmd, tripStatus };
 
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 

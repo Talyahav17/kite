@@ -3,16 +3,9 @@
 import { useEffect, useState } from "react";
 import { api, typeMeta } from "./api.js";
 import { Stars, StarPicker } from "./Stars.jsx";
+import { citiesOf } from "./lib/itinerary.js";
 
-// Every place this trip might touch. City items are the strongest signal, but
-// a multi-city trip is usually typed into the destination field as a list
-// ("France, Netherlands, Germany" / "Rome & Florence"), which as one string
-// matches nothing — so split it and treat each part as a candidate too. T-007.
-export function citiesOf(trip, items) {
-  const fromItems = items.filter((i) => i.type === "city").map((i) => i.title);
-  const fromDestination = (trip.destination || "").split(/[,/&]|\band\b|→|->/);
-  return [...new Set([...fromItems, ...fromDestination].map((c) => c.trim()).filter(Boolean))];
-}
+export { citiesOf };
 
 export function Suggestions({ trip, items, onAdd }) {
   const candidates = citiesOf(trip, items).join("|");

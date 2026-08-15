@@ -1,14 +1,9 @@
 // Presentational pieces shared by the owner's trip page and the public
 // read-only share view (P-018).
 import { ITEM_TYPES, typeMeta } from "./api.js";
+import { fmtDay } from "./lib/dates.js";
 
-export function fmtDay(date) {
-  return new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
-}
+export { fmtDay };
 
 const money = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 

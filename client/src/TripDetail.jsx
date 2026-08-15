@@ -4,21 +4,8 @@ import { api, ITEM_TYPES } from "./api.js";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 import { Suggestions } from "./Suggestions.jsx";
+import { sortItems } from "./lib/itinerary.js";
 import ImportItems from "./ImportItems.jsx";
-
-// T-006: the server returns items sorted, but local edits only replace an
-// element in place — so moving an item to another day left it wherever it
-// happened to sit until a reload. Re-sort after every change, matching the
-// server's order exactly: dated first, then by date, then time, then id.
-function sortItems(list) {
-  return [...list].sort(
-    (a, b) =>
-      (a.date === null) - (b.date === null) ||
-      (a.date || "").localeCompare(b.date || "") ||
-      (a.time || "").localeCompare(b.time || "") ||
-      a.id - b.id
-  );
-}
 
 const EMPTY_ITEM = {
   date: "",
