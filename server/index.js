@@ -11,6 +11,14 @@ import { scheduleBackups } from "./backup.js";
 import { resolveJwtSecret, isProduction } from "./secret.js";
 import { rateLimit } from "./rateLimit.js";
 import { cityCover, coversEnabled, noteUsed } from "./covers.js";
+import {
+  errorMiddleware,
+  installProcessHandlers,
+  recordError,
+  recentErrors,
+  errorSummary,
+  pruneErrors,
+} from "./errors.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -499,10 +507,44 @@ app.get("/api/cover", requireAuth, async (req, res) => {
 app.get("/healthz", (req, res) => {
   try {
     db.prepare("SELECT 1").get();
-    res.json({ ok: true, db: "ok" });
+    // errors in the last hour are surfaced here so an uptime check can watch
+    // one URL and notice a deploy that is up but failing every request
+    res.json({ ok: true, db: "ok", errors: errorSummary() });
   } catch (err) {
     res.status(503).json({ ok: false, db: err.message });
   }
+});
+
+// ---------- error reporting (P-043) ----------
+
+// The browser reports its own crashes here. Deliberately unauthenticated —
+// the errors worth hearing about include the ones that stop a page loading at
+// all — but rate limited, since anything open takes what it is given.
+const clientErrorLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: "Too many error reports.",
+});
+
+app.post("/api/client-error", clientErrorLimiter, (req, res) => {
+  const { message, stack, path: where } = req.body || {};
+  if (!message) return res.status(400).json({ error: "message is required" });
+
+  recordError(
+    { name: "ClientError", message: String(message), stack: stack && String(stack) },
+    { source: "client", path: String(where || "").slice(0, 200) }
+  );
+  res.status(204).end();
+});
+
+// Reading the log is restricted to the address in KITE_ADMIN_EMAIL. With none
+// set nobody can read it, which is the right default for a shared endpoint.
+app.get("/api/errors", requireAuth, (req, res) => {
+  const admin = process.env.KITE_ADMIN_EMAIL?.trim().toLowerCase();
+  if (!admin || req.user.email.toLowerCase() !== admin)
+    return res.status(404).json({ error: "Not found" });
+
+  res.json({ summary: errorSummary(), errors: recentErrors(req.query.limit) });
 });
 
 // ---------- the client, in production ----------
@@ -540,7 +582,14 @@ if (isProduction) {
 
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
 
+// Last, and with four arguments — Express identifies an error handler by its
+// arity, and anything registered after it would never see the error.
+app.use(errorMiddleware(isProduction));
+
+installProcessHandlers();
+
 app.listen(PORT, HOST, () => {
   console.log(`Kite listening on http://${HOST}:${PORT}`);
   scheduleBackups(); // P-014: on boot, then daily
+  pruneErrors();
 });

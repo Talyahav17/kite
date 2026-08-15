@@ -9,6 +9,34 @@ import { fmtRange, tripDays, todayYmd, tripStatus } from "./lib/dates.js";
 // re-exported so the pages that grew up importing them from here still work
 export { fmtRange, tripDays, todayYmd, tripStatus };
 
+// P-032: a photo of the destination layered over the gradient when one exists.
+// The gradient stays underneath, so a missing key, a failed request or no
+// network degrades to the cover Kite already had rather than an empty box.
+// Both photo sources require their photographer to be credited on display.
+function CoverPhoto({ city }) {
+  const [cover, setCover] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    if (!city) return;
+    api
+      .cover(city)
+      .then((c) => live && setCover(c))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [city]);
+
+  if (!cover?.url) return null;
+  return (
+    <>
+      <img className="trip-cover-photo" src={cover.url} alt={cover.alt} loading="lazy" />
+      <span className="cover-credit">{cover.credit}</span>
+    </>
+  );
+}
+
 const EMPTY = { title: "", destination: "", start_date: "", end_date: "", notes: "" };
 
 const FILTERS = [
