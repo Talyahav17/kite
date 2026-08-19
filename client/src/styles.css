@@ -92,8 +92,8 @@ h2 { font-size: 1.15rem; margin: 0 0 12px; }
 /* Optional drift, and only ever the sail — animating the word would wobble
    the whole logo. Off by default: the artwork reads better held still. */
 .kite-art-animate .kite-sail {
-  transform-origin: 295px 215px; /* where the string leaves the sail */
-  animation: kite-sway-subtle 9s ease-in-out infinite;
+  transform-origin: 296px 250px; /* the tether point the sail pivots on */
+  animation: kite-sway 9s ease-in-out infinite;
 }
 
 .topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -247,6 +247,55 @@ input:focus, textarea:focus, select:focus {
   justify-content: center;
   padding: 40px 24px;
   background: var(--card);
+}
+
+/* ---- day planner (P-047) ---- */
+
+.modal-wide { max-width: 620px; }
+
+.plan-days { max-height: 46vh; overflow-y: auto; margin: 4px 0 14px; }
+
+.plan-day { padding: 12px 0; border-top: 1px solid var(--line); }
+.plan-day:first-child { border-top: none; padding-top: 0; }
+
+.plan-day-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.plan-city { font-size: 0.82rem; font-weight: 700; color: var(--accent); }
+
+.plan-hotel {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 5px 9px;
+  margin-bottom: 8px;
+}
+
+.plan-list { list-style: none; margin: 0; padding: 0; }
+
+.plan-item label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 5px 0;
+  font-weight: 400;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.plan-item input { width: auto; margin: 0; }
+.plan-item.off { opacity: 0.42; }
+.plan-item.off .plan-name { text-decoration: line-through; }
+
+.plan-time { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 0.85rem; }
+.plan-name { flex: 1; font-weight: 600; }
+.plan-empty { color: var(--ink-soft); font-size: 0.86rem; font-style: italic; margin: 4px 0; }
+
+.plan-notes {
+  margin: 0 0 16px;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
 }
 
 /* ---- destination suggestions (P-046) ---- */
@@ -1019,3 +1068,60 @@ input:focus, textarea:focus, select:focus {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ===========================================
+   POLISH (P-049)
+   Small feedback that makes the app feel
+   responsive rather than static. All of it is
+   suppressed under prefers-reduced-motion by
+   the media query above.
+   =========================================== */
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Dialogs arrive rather than appearing, so the eye can follow where they
+   came from instead of re-finding the page. */
+.modal-backdrop { animation: backdrop-in 0.16s ease-out; }
+.modal { animation: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Every control says it was pressed. Without this a slow request feels like
+   a dead button and people click twice. */
+.btn:active:not(:disabled),
+.chip:active:not(:disabled) { transform: translateY(1px); }
+
+.btn, .chip, .trip-card, .item, .suggestion, .destination-option {
+  transition: background-color 0.14s ease, border-color 0.14s ease,
+              color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Keyboard users get the same clarity as mouse users. :focus-visible keeps it
+   off mouse clicks, where a persistent ring just looks broken. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Rows lift slightly under the pointer so a long list feels touchable. */
+.suggestion:hover, .prompt:hover { border-color: var(--accent); }
+.plan-item label:hover .plan-name { color: var(--accent); }
+
+/* The kite flies when you point at the logo. */
+.brand .kite-sail { transform-origin: 296px 250px; transition: transform 0.5s ease; }
+.brand:hover .kite-sail { animation: kite-sway 2.6s ease-in-out infinite; }
+
+/* An empty account should feel like a beginning, not a gap. */
+.empty-state { padding: 56px 24px; }
+.empty-emoji { font-size: 2.8rem; margin-bottom: 10px; }
+.empty-state h2 { font-size: 1.25rem; margin-bottom: 6px; }
+.empty-state p { max-width: 34ch; margin: 0 auto 18px; }

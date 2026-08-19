@@ -37,6 +37,7 @@ export const api = {
     return (await res.json()).cover;
   },
   pendingRatings: () => request("/api/ratings/pending"),
+  plan: (tripId) => request(`/api/trips/${tripId}/plan`),
   rateAttraction: (id, body) =>
     request(`/api/attractions/${id}/rate`, { method: "POST", body }),
 

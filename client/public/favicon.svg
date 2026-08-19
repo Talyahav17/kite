@@ -1,16 +1,20 @@
-<!-- The sail alone, cropped from the logo artwork — a full lockup is illegible
-     at 16px. Geometry and colours match KiteLogo.jsx exactly. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="128 52 96 140">
+<!-- The sail alone, from the logo artwork — a full lockup is illegible at 16px.
+     Geometry and colours match KiteLogo.jsx exactly. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="216 62 160 200">
   <defs>
-    <linearGradient id="p" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9B00E8"/><stop offset="60%" stop-color="#7500C0"/><stop offset="100%" stop-color="#550099"/>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9D1AFF"/><stop offset="55%" stop-color="#7200CB"/><stop offset="100%" stop-color="#4D008C"/>
     </linearGradient>
     <linearGradient id="f" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#B833FF"/><stop offset="100%" stop-color="#8000D4"/>
+      <stop offset="0%" stop-color="#9D1AFF"/><stop offset="100%" stop-color="#7200CB"/>
     </linearGradient>
   </defs>
-  <path d="M 180,60 L 135,115 L 180,185 L 180,60 Z" fill="url(#f)"/>
-  <path d="M 180,60 L 225,115 L 180,185 L 180,60 Z" fill="url(#p)"/>
-  <path d="M 180,60 L 180,185" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
-  <path d="M 135,115 L 225,115" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+  <g transform="rotate(13 296 250)">
+    <path d="M 322,76 L 232,150 L 300,152 Z" fill="url(#f)"/>
+    <path d="M 322,76 L 356,158 L 300,152 Z" fill="url(#g)"/>
+    <path d="M 232,150 Q 252,198 296,250 L 300,152 Z" fill="#7200CB"/>
+    <path d="M 356,158 Q 342,204 296,250 L 300,152 Z" fill="#4D008C"/>
+    <path d="M 322,76 L 296,250" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.9" fill="none"/>
+    <path d="M 232,150 Q 300,178 356,158" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" opacity="0.9" fill="none"/>
+  </g>
 </svg>

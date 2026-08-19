@@ -6,6 +6,7 @@ import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 import { Suggestions } from "./Suggestions.jsx";
 import { sortItems } from "./lib/itinerary.js";
 import ImportItems from "./ImportItems.jsx";
+import DayPlanner from "./DayPlanner.jsx";
 
 const EMPTY_ITEM = {
   date: "",
@@ -30,6 +31,7 @@ export default function TripDetail() {
   const [sharing, setSharing] = useState(false);
   const [confirmingUnshare, setConfirmingUnshare] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const [budgeting, setBudgeting] = useState(null); // null | draft string
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
@@ -232,6 +234,9 @@ export default function TripDetail() {
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}
         </div>
         <div className="trip-head-actions">
+          <button className="btn btn-small btn-primary" onClick={() => setPlanning(true)}>
+            Plan my days
+          </button>
           <button className="btn btn-small" onClick={() => setImporting(true)}>
             Paste plan
           </button>
@@ -328,6 +333,18 @@ export default function TripDetail() {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+
+      {planning && (
+        <DayPlanner
+          tripId={trip.id}
+          onClose={() => setPlanning(false)}
+          onAccepted={(created) => {
+            setItems((prev) => sortItems([...prev, ...created]));
+            setPlanning(false);
+            flash(`Added ${created.length} ${created.length === 1 ? "item" : "items"}`);
+          }}
+        />
+      )}
 
       {importing && (
         <ImportItems

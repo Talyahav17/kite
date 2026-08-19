@@ -160,7 +160,8 @@ test("the logo renders in both palettes, and the illustration draws", () => {
 
 test("two logos on one page do not share gradient ids", () => {
   const html = render(h("div", null, h(KiteLogo, { height: 20 }), h(KiteLogo, { height: 20, variant: "reverse" })));
-  const ids = [...html.matchAll(/id="(vibrantPurple-[^"]+)"/g)].map((m) => m[1]);
-  assert.equal(ids.length, 2);
-  assert.notEqual(ids[0], ids[1], "shared ids would repaint one logo with the other's colours");
+  // matched by shape, not by name, so renaming a gradient does not break this
+  const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(ids.length >= 2, "each logo defines its own gradients");
+  assert.equal(new Set(ids).size, ids.length, "shared ids repaint one logo with the other's colours");
 });

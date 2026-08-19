@@ -11,6 +11,7 @@ import { scheduleBackups } from "./backup.js";
 import { resolveJwtSecret, isProduction } from "./secret.js";
 import { rateLimit } from "./rateLimit.js";
 import { cityCover, coversEnabled, noteUsed } from "./covers.js";
+import { buildPlan, planSummary, tripDays } from "./planner.js";
 import {
   googleEnabled,
   redirectUri,
@@ -534,6 +535,63 @@ app.post("/api/attractions/:id/rate", requireAuth, (req, res) => {
     .prepare(`${ratingSummary} WHERE a.id = ? GROUP BY a.id`)
     .get(attraction.id);
   res.json({ attraction: { ...summary, your_rating: stars } });
+});
+
+// ---------- day plans (P-047) ----------
+//
+// Proposes; never writes. The traveller sees the plan and decides — a planner
+// that silently fills someone's itinerary is a planner they stop trusting.
+app.get("/api/trips/:id/plan", requireAuth, (req, res) => {
+  const trip = ownedTrip(req, res, req.params.id);
+  if (!trip) return;
+
+  const items = db
+    .prepare("SELECT * FROM items WHERE trip_id = ? ORDER BY date IS NULL, date, time, id")
+    .all(trip.id);
+
+  const days = tripDays(trip.start_date, trip.end_date);
+
+  // Where the itinerary already says the traveller will be, day by day.
+  const cityForDay = {};
+  for (const item of items) {
+    if (item.type === "city" && item.date) cityForDay[item.date] = item.title.trim();
+  }
+
+  // Every place this trip could touch: its city items, plus its destination
+  // split into parts, matched against city or country.
+  const candidates = [
+    ...items.filter((i) => i.type === "city").map((i) => i.title),
+    ...String(trip.destination || "").split(/[,/&]|\band\b|→|->/),
+  ]
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+
+  const places = candidates.length
+    ? db
+        .prepare(
+          `SELECT a.id, a.name, a.city, a.type, a.image_url,
+                  ROUND(AVG(r.stars), 2) AS avg_stars,
+                  COUNT(r.id) AS rating_count
+           FROM attractions a
+           LEFT JOIN ratings r ON r.attraction_id = a.id
+           WHERE a.city_key IN (${candidates.map(() => "?").join(",")})
+              OR a.country_key IN (${candidates.map(() => "?").join(",")})
+           GROUP BY a.id`
+        )
+        .all(...candidates, ...candidates)
+    : [];
+
+  const hotel = items.find((i) => i.type === "hotel") || null;
+
+  const plan = buildPlan({
+    days,
+    cityForDay,
+    places,
+    planned: items.map((i) => i.title.trim().toLowerCase()),
+    hotel,
+  });
+
+  res.json({ plan, summary: planSummary(plan, { hotel }) });
 });
 
 // P-039: a cover photo for a trip, matched to where it goes.

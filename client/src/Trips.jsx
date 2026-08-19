@@ -240,8 +240,15 @@ export default function Trips() {
 
       {trips.length === 0 && !showForm && (
         <div className="empty-state">
-          <div className="empty-emoji">🧳</div>
-          <p>No trips yet. Create your first one and start filling in the days.</p>
+          <div className="empty-emoji">🪁</div>
+          <h2>Somewhere to be?</h2>
+          <p>
+            Start with a place and some dates — Kite fills in the days, suggests
+            what to see, and keeps track of what it all costs.
+          </p>
+          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+            Plan your first trip
+          </button>
         </div>
       )}
 
