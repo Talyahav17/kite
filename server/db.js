@@ -102,6 +102,17 @@ addColumn("attractions", "image_license", "TEXT");
 addColumn("attractions", "image_license_url", "TEXT");
 addColumn("attractions", "image_page", "TEXT");
 
+// P-045: social sign-in. A Google-only account has no password, and
+// password_hash stays NOT NULL, so it holds an empty string — bcrypt compares
+// false against that for every input, which is exactly the behaviour wanted:
+// such an account can never be signed into with a password.
+addColumn("users", "auth_provider", "TEXT");
+addColumn("users", "provider_id", "TEXT");
+db.exec(
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_provider
+   ON users(auth_provider, provider_id) WHERE provider_id IS NOT NULL`
+);
+
 // T-007: a trip labelled "France" should still surface Paris.
 addColumn("attractions", "country", "TEXT");
 addColumn("attractions", "country_key", "TEXT");

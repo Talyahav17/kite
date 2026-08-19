@@ -15,6 +15,7 @@ export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   me: () => request("/api/auth/me"),
+  providers: () => request("/api/auth/providers"),
 
   trips: () => request("/api/trips"),
   createTrip: (body) => request("/api/trips", { method: "POST", body }),

@@ -12,6 +12,13 @@ import { resolveJwtSecret, isProduction } from "./secret.js";
 import { rateLimit } from "./rateLimit.js";
 import { cityCover, coversEnabled, noteUsed } from "./covers.js";
 import {
+  googleEnabled,
+  redirectUri,
+  authorizeUrl,
+  exchangeCode,
+  verifyIdToken,
+} from "./oauth.js";
+import {
   errorMiddleware,
   installProcessHandlers,
   recordError,
@@ -140,6 +147,95 @@ app.post("/api/auth/logout", (req, res) => {
   res.clearCookie(COOKIE, COOKIE_OPTIONS);
   res.json({ ok: true });
 });
+
+// ---------- sign in with Google (P-045) ----------
+
+// The client asks what is available rather than guessing, so the button only
+// appears when it will actually work.
+app.get("/api/auth/providers", (req, res) => {
+  res.json({ google: googleEnabled() });
+});
+
+const OAUTH_STATE = "kite_oauth_state";
+
+app.get("/api/auth/google", (req, res) => {
+  if (!googleEnabled())
+    return res.status(503).json({ error: "Google sign-in is not configured" });
+
+  // state ties the callback to this browser: without it, an attacker can feed
+  // someone else's authorization code to a victim and sign them into the
+  // attacker's account.
+  const state = crypto.randomBytes(24).toString("base64url");
+  res.cookie(OAUTH_STATE, state, {
+    ...COOKIE_OPTIONS,
+    maxAge: 10 * 60 * 1000, // the round trip should take seconds
+  });
+  res.redirect(authorizeUrl({ state, redirect: redirectUri(req) }));
+});
+
+app.get("/api/auth/google/callback", async (req, res, next) => {
+  if (!googleEnabled())
+    return res.status(503).json({ error: "Google sign-in is not configured" });
+
+  const { code, state, error: providerError } = req.query;
+  const expected = req.cookies[OAUTH_STATE];
+  res.clearCookie(OAUTH_STATE, COOKIE_OPTIONS);
+
+  // The user pressed cancel on Google's screen — not an error worth a page.
+  if (providerError) return res.redirect("/?signin=cancelled");
+
+  if (!code || !state || !expected || state !== expected)
+    return res.status(400).json({ error: "Sign-in could not be verified. Please try again." });
+
+  try {
+    const tokens = await exchangeCode({ code, redirect: redirectUri(req) });
+    const profile = await verifyIdToken(tokens.id_token);
+
+    const user = findOrCreateGoogleUser(profile);
+    setAuthCookie(res, user);
+    res.redirect("/");
+  } catch (err) {
+    // A failed sign-in is worth recording, but the user gets a plain message.
+    recordError(err, { source: "server", path: "/api/auth/google/callback", status: 400 });
+    res.status(400).json({ error: "Google sign-in failed. Please try again." });
+  }
+});
+
+/**
+ * Find the account this Google profile belongs to, or make one.
+ *
+ * Linking by email is only safe because verifyIdToken refuses an unverified
+ * address — otherwise anyone could create a Google account claiming an email
+ * they do not own and take over the matching Kite account.
+ */
+function findOrCreateGoogleUser({ providerId, email, name }) {
+  const byProvider = db
+    .prepare("SELECT * FROM users WHERE auth_provider = 'google' AND provider_id = ?")
+    .get(providerId);
+  if (byProvider) return byProvider;
+
+  const byEmail = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+  if (byEmail) {
+    // Existing password account, same verified address: link them rather than
+    // creating a second account for the same person.
+    db.prepare("UPDATE users SET auth_provider = 'google', provider_id = ? WHERE id = ?").run(
+      providerId,
+      byEmail.id
+    );
+    return { ...byEmail, auth_provider: "google", provider_id: providerId };
+  }
+
+  // No password: '' can never match a bcrypt comparison, so this account is
+  // reachable only through Google.
+  const { lastInsertRowid } = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, name, auth_provider, provider_id)
+       VALUES (?, '', ?, 'google', ?)`
+    )
+    .run(email, name, providerId);
+
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(lastInsertRowid);
+}
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db

@@ -249,6 +249,40 @@ input:focus, textarea:focus, select:focus {
   background: var(--card);
 }
 
+/* ---- social sign-in (P-045) ---- */
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.btn-social:hover { border-color: var(--accent); }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 -8px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 .auth-card { width: 100%; max-width: 380px; }
 .auth-card h1 { font-size: 1.55rem; letter-spacing: -0.02em; }
 .auth-card form { margin-top: 26px; }
