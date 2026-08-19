@@ -5,6 +5,8 @@ import { coverStyle } from "./covers.js";
 import { useUser } from "./App.jsx";
 import { RatingPrompts } from "./Suggestions.jsx";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./lib/dates.js";
+import { suggestTripName } from "./lib/tripName.js";
+import DestinationField from "./DestinationField.jsx";
 
 // re-exported so the pages that grew up importing them from here still work
 export { fmtRange, tripDays, todayYmd, tripStatus };
@@ -83,6 +85,7 @@ export default function Trips() {
   const [trips, setTrips] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [namedByHand, setNamedByHand] = useState(false);
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
 
@@ -90,7 +93,17 @@ export default function Trips() {
     api.trips().then((d) => setTrips(d.trips));
   }, []);
 
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  // P-046: the name keeps up with the destination, dates and notes — until the
+  // traveller writes their own, after which it is theirs and we stop touching it.
+  function update(patch) {
+    setForm((current) => {
+      const next = { ...current, ...patch };
+      if (!namedByHand) next.title = suggestTripName(next);
+      return next;
+    });
+  }
+
+  const set = (k) => (e) => update({ [k]: e.target.value });
 
   async function create(e) {
     e.preventDefault();
@@ -151,7 +164,7 @@ export default function Trips() {
               : "Every trip starts with a first line in the itinerary."}
           </p>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={() => setShowForm(!showForm)}>
+        <button className="btn btn-primary btn-lg" onClick={() => { setShowForm(!showForm); setNamedByHand(false); }}>
           {showForm ? "Cancel" : "+ New trip"}
         </button>
       </div>
@@ -181,7 +194,10 @@ export default function Trips() {
               Trip name
               <input
                 value={form.title}
-                onChange={set("title")}
+                onChange={(e) => {
+                  setNamedByHand(e.target.value.trim() !== "");
+                  setForm((f) => ({ ...f, title: e.target.value }));
+                }}
                 placeholder="Summer in Italy"
                 required
                 autoFocus
@@ -189,10 +205,12 @@ export default function Trips() {
             </label>
             <label>
               Destination
-              <input
+              <DestinationField
                 value={form.destination}
-                onChange={set("destination")}
-                placeholder="Italy"
+                onChange={(destination) =>
+                  setForm((f) => ({ ...f, destination }))
+                }
+                onCommit={(destination) => update({ destination })}
               />
             </label>
           </div>

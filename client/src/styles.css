@@ -249,6 +249,56 @@ input:focus, textarea:focus, select:focus {
   background: var(--card);
 }
 
+/* ---- destination suggestions (P-046) ---- */
+
+.destination-field { position: relative; }
+
+.destination-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 232px;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(28, 36, 52, 0.16);
+}
+
+.destination-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.destination-option.active { background: var(--accent); color: #fff; }
+
+.destination-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.destination-option.active .destination-tag {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
 /* ---- social sign-in (P-045) ---- */
 
 .btn-social {
