@@ -81,16 +81,26 @@ const FILTERS = [
 
 export default function Trips() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const [trips, setTrips] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [namedByHand, setNamedByHand] = useState(false);
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    api.trips().then((d) => setTrips(d.trips));
+    api
+      .trips()
+      .then((d) => setTrips(d.trips))
+      .catch((err) => {
+        // Without this the page sat on skeletons for ever when a session
+        // lapsed, and reported the rejection as a crash. A lapsed session
+        // belongs back at sign-in; anything else is worth saying out loud.
+        if (/not logged in|session expired|no longer exists/i.test(err.message)) setUser(null);
+        else setLoadError(err.message);
+      });
   }, []);
 
   // P-046: the name keeps up with the destination, dates and notes — until the
@@ -115,6 +125,18 @@ export default function Trips() {
       setError(err.message);
     }
   }
+
+  if (loadError)
+    return (
+      <div className="empty-state">
+        <div className="empty-emoji">🌧️</div>
+        <h2>Couldn’t load your trips</h2>
+        <p>{loadError}</p>
+        <button className="btn btn-primary" onClick={() => location.reload()}>
+          Try again
+        </button>
+      </div>
+    );
 
   if (!trips)
     return (

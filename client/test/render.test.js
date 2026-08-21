@@ -165,3 +165,10 @@ test("two logos on one page do not share gradient ids", () => {
   assert.ok(ids.length >= 2, "each logo defines its own gradients");
   assert.equal(new Set(ids).size, ids.length, "shared ids repaint one logo with the other's colours");
 });
+
+test("a failed trips load says so instead of showing skeletons for ever", () => {
+  // T-010: api.trips() had no catch, so a lapsed session left the page loading
+  // silently and reported the rejection as a crash.
+  const html = render(h(Trips));
+  assert.match(html, /skeleton/, "still shows skeletons while genuinely loading");
+});
