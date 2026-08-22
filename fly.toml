@@ -6,10 +6,11 @@
 #      container's own filesystem is destroyed on every deploy — without this
 #      volume, every trip disappears the next time you ship.
 #
-#   2. auto_stop_machines. Kite's backups run on a timer inside the process, so
-#      a machine that sleeps stops backing up. It is set to stop anyway (it is
-#      far cheaper, and nothing is lost), but see the runbook: run
-#      `npm run backup` before maintenance rather than trusting the timer.
+#   2. The machine stays on. It used to sleep when idle, which was cheaper but
+#      meant the first visitor after a quiet spell waited on a blank page while
+#      it woke up — and Kite's backups run on a timer inside the process, so a
+#      sleeping machine also stopped backing up. Always-on costs a few dollars
+#      a month and fixes both.
 #
 # A single machine is correct for now. SQLite is one writer, and the rate
 # limiter counts in memory per process — a second machine would split both.
@@ -32,9 +33,9 @@ primary_region = "ams"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
   [[http_service.checks]]
     grace_period = "10s"
