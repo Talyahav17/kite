@@ -20,6 +20,13 @@ import {
   verifyIdToken,
 } from "./oauth.js";
 import {
+  appleEnabled,
+  redirectUri as appleRedirectUri,
+  authorizeUrl as appleAuthorizeUrl,
+  exchangeCode as appleExchangeCode,
+  verifyIdToken as appleVerifyIdToken,
+} from "./apple.js";
+import {
   errorMiddleware,
   installProcessHandlers,
   recordError,
@@ -232,7 +239,7 @@ app.delete("/api/auth/me", requireAuth, loginLimiter, (req, res) => {
 // The client asks what is available rather than guessing, so the button only
 // appears when it will actually work.
 app.get("/api/auth/providers", (req, res) => {
-  res.json({ google: googleEnabled() });
+  res.json({ google: googleEnabled(), apple: appleEnabled() });
 });
 
 const OAUTH_STATE = "kite_oauth_state";
@@ -270,7 +277,7 @@ app.get("/api/auth/google/callback", async (req, res, next) => {
     const tokens = await exchangeCode({ code, redirect: redirectUri(req) });
     const profile = await verifyIdToken(tokens.id_token);
 
-    const user = findOrCreateGoogleUser(profile);
+    const user = findOrCreateSocialUser("google", profile);
     setAuthCookie(res, user);
     res.redirect("/");
   } catch (err) {
@@ -280,38 +287,106 @@ app.get("/api/auth/google/callback", async (req, res, next) => {
   }
 });
 
+// ---------- sign in with Apple (P-061) ----------
+
+const APPLE_STATE = "kite_apple_state";
+
+// Apple returns with a cross-site POST. A SameSite=Lax cookie is not sent on
+// that request, so this one has to be None — which the browser only accepts
+// alongside Secure. Apple refuses plain-http redirect URIs anyway, so Apple
+// sign-in is an HTTPS-only feature by construction.
+const APPLE_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "none",
+  secure: true,
+  path: "/",
+};
+
+app.get("/api/auth/apple", (req, res) => {
+  if (!appleEnabled())
+    return res.status(503).json({ error: "Apple sign-in is not configured" });
+
+  const state = crypto.randomBytes(24).toString("base64url");
+  res.cookie(APPLE_STATE, state, { ...APPLE_COOKIE_OPTIONS, maxAge: 10 * 60 * 1000 });
+  res.redirect(appleAuthorizeUrl({ state, redirect: appleRedirectUri(req) }));
+});
+
+// A POST, not a GET: response_mode=form_post is forced as soon as any scope is
+// requested. express.json() would not touch this body, so it is parsed here.
+app.post(
+  "/api/auth/apple/callback",
+  express.urlencoded({ extended: false }),
+  async (req, res) => {
+    if (!appleEnabled())
+      return res.status(503).json({ error: "Apple sign-in is not configured" });
+
+    const { code, state, error: providerError, user: userJson } = req.body || {};
+    const expected = req.cookies[APPLE_STATE];
+    res.clearCookie(APPLE_STATE, APPLE_COOKIE_OPTIONS);
+
+    if (providerError) return res.redirect("/?signin=cancelled");
+
+    if (!code || !state || !expected || state !== expected)
+      return res
+        .status(400)
+        .json({ error: "Sign-in could not be verified. Please try again." });
+
+    try {
+      // The name comes once, here, and never again. If this is a returning
+      // traveller the field is simply absent.
+      let name = "";
+      try {
+        const parsed = JSON.parse(userJson || "{}");
+        name = [parsed?.name?.firstName, parsed?.name?.lastName].filter(Boolean).join(" ");
+      } catch {
+        // a malformed name must not cost somebody their sign-in
+      }
+
+      const tokens = await appleExchangeCode({ code, redirect: appleRedirectUri(req) });
+      const profile = await appleVerifyIdToken(tokens.id_token, name);
+
+      setAuthCookie(res, findOrCreateSocialUser("apple", profile));
+      res.redirect("/");
+    } catch (err) {
+      recordError(err, { source: "server", path: "/api/auth/apple/callback", status: 400 });
+      res.status(400).json({ error: "Apple sign-in failed. Please try again." });
+    }
+  }
+);
+
 /**
- * Find the account this Google profile belongs to, or make one.
+ * Find the account this social profile belongs to, or make one.
  *
  * Linking by email is only safe because verifyIdToken refuses an unverified
  * address — otherwise anyone could create a Google account claiming an email
  * they do not own and take over the matching Kite account.
  */
-function findOrCreateGoogleUser({ providerId, email, name }) {
+function findOrCreateSocialUser(provider, { providerId, email, name }) {
   const byProvider = db
-    .prepare("SELECT * FROM users WHERE auth_provider = 'google' AND provider_id = ?")
-    .get(providerId);
+    .prepare("SELECT * FROM users WHERE auth_provider = ? AND provider_id = ?")
+    .get(provider, providerId);
   if (byProvider) return byProvider;
 
   const byEmail = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
   if (byEmail) {
-    // Existing password account, same verified address: link them rather than
+    // Existing account, same verified address: link them rather than
     // creating a second account for the same person.
-    db.prepare("UPDATE users SET auth_provider = 'google', provider_id = ? WHERE id = ?").run(
+    db.prepare("UPDATE users SET auth_provider = ?, provider_id = ? WHERE id = ?").run(
+      provider,
       providerId,
       byEmail.id
     );
-    return { ...byEmail, auth_provider: "google", provider_id: providerId };
+    return { ...byEmail, auth_provider: provider, provider_id: providerId };
   }
 
   // No password: '' can never match a bcrypt comparison, so this account is
-  // reachable only through Google.
+  // reachable only through the provider.
   const { lastInsertRowid } = db
     .prepare(
       `INSERT INTO users (email, password_hash, name, auth_provider, provider_id)
-       VALUES (?, '', ?, 'google', ?)`
+       VALUES (?, '', ?, ?, ?)`
     )
-    .run(email, name, providerId);
+    .run(email, name, provider, providerId);
 
   return db.prepare("SELECT * FROM users WHERE id = ?").get(lastInsertRowid);
 }

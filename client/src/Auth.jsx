@@ -18,6 +18,17 @@ function GoogleMark() {
   );
 }
 
+// Apple's mark, drawn rather than loaded, for the same reason as Google's:
+// their guidelines fix the shape, and a remote <img> is one more thing that
+// fails on a bad connection.
+function AppleMark() {
+  return (
+    <svg width="16" height="19" viewBox="0 0 14 17" aria-hidden="true" fill="currentColor">
+      <path d="M11.6 9c0-1.8 1.5-2.7 1.6-2.8-.9-1.3-2.2-1.4-2.7-1.5-1.2-.1-2.3.7-2.9.7-.6 0-1.5-.7-2.5-.7-1.3 0-2.4.7-3.1 1.9-1.3 2.3-.3 5.6 1 7.4.6.9 1.3 1.9 2.3 1.9 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-.9 2.3-1.8.7-1 1-2.1 1-2.1s-2-.8-2-3zM9.7 3.3c.5-.6.9-1.5.8-2.4-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9.1 1.8-.5 2.3-1.2z" />
+    </svg>
+  );
+}
+
 export default function Auth() {
   const { setUser } = useUser();
   const [mode, setMode] = useState("login");
@@ -85,12 +96,22 @@ export default function Auth() {
             </button>
           </p>
 
-          {providers.google && (
+          {(providers.google || providers.apple) && (
             <>
-              {/* a full page navigation, not fetch — OAuth redirects the browser */}
-              <a className="btn btn-block btn-lg btn-social" href="/api/auth/google">
-                <GoogleMark /> Continue with Google
-              </a>
+              {/* full page navigations, not fetch — OAuth redirects the browser */}
+              {providers.google && (
+                <a className="btn btn-block btn-lg btn-social" href="/api/auth/google">
+                  <GoogleMark /> Continue with Google
+                </a>
+              )}
+              {providers.apple && (
+                <a
+                  className="btn btn-block btn-lg btn-social btn-apple"
+                  href="/api/auth/apple"
+                >
+                  <AppleMark /> Continue with Apple
+                </a>
+              )}
               <div className="auth-divider">
                 <span>or</span>
               </div>
