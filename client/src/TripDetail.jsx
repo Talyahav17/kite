@@ -9,6 +9,7 @@ import { sortItems } from "./lib/itinerary.js";
 import ImportItems from "./ImportItems.jsx";
 import DayPlanner from "./DayPlanner.jsx";
 import Modal from "./Modal.jsx";
+import { plural } from "./lib/plural.js";
 
 const EMPTY_ITEM = {
   date: "",
@@ -283,7 +284,7 @@ export default function TripDetail() {
             {trip.destination && <span>📍 {trip.destination}</span>}
             <span>🗓 {fmtRange(trip.start_date, trip.end_date)}</span>
             <span>
-              {days.length} days · {items.length} items
+              {plural(days.length, "day")} · {plural(items.length, "item")}
               {totalCost > 0 && ` · $${totalCost.toLocaleString()} planned`}
             </span>
             <span className={`trip-countdown ${status.kind}`}>
@@ -407,7 +408,7 @@ export default function TripDetail() {
           onAccepted={(created) => {
             setItems((prev) => sortItems([...prev, ...created]));
             setPlanning(false);
-            flash(`Added ${created.length} ${created.length === 1 ? "item" : "items"}`);
+            flash(`Added ${plural(created.length, "item")}`);
           }}
         />
       )}
@@ -420,7 +421,7 @@ export default function TripDetail() {
           onImported={(created) => {
             setItems((prev) => sortItems([...prev, ...created]));
             setImporting(false);
-            flash(`Added ${created.length} ${created.length === 1 ? "item" : "items"}`);
+            flash(`Added ${plural(created.length, "item")}`);
           }}
         />
       )}
@@ -602,8 +603,8 @@ export default function TripDetail() {
         >
           <h2>Delete “{trip.title}”?</h2>
           <p className="confirm-text">
-            This deletes the trip and all {items.length}{" "}
-            {items.length === 1 ? "item" : "items"} in it. It can’t be undone.
+            This deletes the trip and all {plural(items.length, "item")} in it.
+            It can’t be undone.
           </p>
         </Modal>
       )}
