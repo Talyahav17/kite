@@ -60,3 +60,11 @@ test("a created trip opens, and is still there after a refresh", async ({ page }
   await page.getByRole("link", { name: /All trips/ }).click();
   await expect(page.getByText("Cherry blossom run")).toBeVisible();
 });
+
+// The other half of P-052: a trip that genuinely is not there must still say
+// so. Fixing the lapsed-session case is worthless if it swallows a real 404.
+test("a trip that does not exist still says so", async ({ page }) => {
+  await page.goto("/trips/999999");
+  await expect(page.getByText("Trip not found")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Back to trips/ })).toBeVisible();
+});

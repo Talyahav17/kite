@@ -60,3 +60,33 @@ test("a session that lapses mid-visit returns to sign-in, not endless skeletons"
   });
   await expect(page.locator(".skeleton")).toHaveCount(0);
 });
+
+// P-052. TripDetail caught every load failure as "Trip not found", so a lapsed
+// session told the traveller their trip was gone. Navigated in-app rather than
+// reloaded: a reload hits the sign-in gate before TripDetail ever loads, so it
+// would pass without exercising the catch at all.
+test("a lapsed session on a trip page returns to sign-in, not 'Trip not found'", async ({
+  page,
+  context,
+}) => {
+  const user = freshUser("lapsed-detail");
+  await signUp(page, user);
+  await createTrip(page, {
+    destination: "Japan",
+    start: "2027-04-10",
+    end: "2027-04-12",
+    title: "Nara day trip",
+  });
+
+  await page.getByRole("link", { name: /All trips/ }).click();
+  await expect(page.getByText("Nara day trip")).toBeVisible();
+
+  // the tab stays open; the session goes away underneath it
+  await context.clearCookies();
+  await page.getByText("Nara day trip").click();
+
+  await expect(page.getByRole("heading", { name: "Sign in to Kite." })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByText("Trip not found")).toHaveCount(0);
+});

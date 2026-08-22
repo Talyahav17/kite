@@ -26,6 +26,7 @@ export default function TripDetail() {
   const [trip, setTrip] = useState(null);
   const [items, setItems] = useState([]);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [editing, setEditing] = useState(null); // null | item form state
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingItemDelete, setConfirmingItemDelete] = useState(false);
@@ -75,7 +76,16 @@ export default function TripDetail() {
         setTrip(d.trip);
         setItems(d.items);
       })
-      .catch(() => setNotFound(true));
+      .catch((err) => {
+        // P-052: this used to catch everything as "Trip not found", so a
+        // lapsed session or a server hiccup told the traveller their trip was
+        // gone. Only a real 404 means gone; a lapsed session belongs back at
+        // sign-in, as in Trips.jsx, and anything else says what happened.
+        if (/not logged in|session expired|no longer exists/i.test(err.message))
+          setUser(null);
+        else if (/not found/i.test(err.message)) setNotFound(true);
+        else setLoadError(err.message);
+      });
   }, [id]);
 
   const days = useMemo(
@@ -212,6 +222,18 @@ export default function TripDetail() {
     return (
       <div className="empty-state">
         <p>Trip not found.</p>
+        <Link to="/">← Back to trips</Link>
+      </div>
+    );
+  if (loadError)
+    return (
+      <div className="empty-state">
+        <div className="empty-emoji">🌧️</div>
+        <h2>Couldn’t load this trip</h2>
+        <p>{loadError}</p>
+        <button className="btn btn-primary" onClick={() => location.reload()}>
+          Try again
+        </button>
         <Link to="/">← Back to trips</Link>
       </div>
     );
