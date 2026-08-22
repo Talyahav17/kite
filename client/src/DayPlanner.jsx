@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { api, typeMeta } from "./api.js";
 import { fmtDay } from "./lib/dates.js";
 import { Stars } from "./Stars.jsx";
+import Modal from "./Modal.jsx";
 
 export default function DayPlanner({ tripId, onClose, onAccepted }) {
   const [plan, setPlan] = useState(null);
@@ -65,15 +66,31 @@ export default function DayPlanner({ tripId, onClose, onAccepted }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal-wide card" onClick={(e) => e.stopPropagation()}>
+    <Modal
+      onClose={onClose}
+      size="wide"
+      error={error}
+      actions={
+        <>
+          <span className="spacer" />
+          <button className="btn btn-ghost" onClick={onClose}>
+            Not now
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={accept}
+            disabled={busy || chosen.length === 0}
+          >
+            {busy ? "Adding…" : `Add ${chosen.length} to my trip`}
+          </button>
+        </>
+      }
+    >
         <h2>A plan for each day</h2>
         <p className="confirm-text">
           Built from places Kite knows and how travellers rated them. Nothing is
           added until you say so — untick anything you don’t fancy.
         </p>
-
-        {error && <div className="form-error">{error}</div>}
 
         {plan?.[0]?.hotel && (
           <div className="plan-hotel">
@@ -135,20 +152,6 @@ export default function DayPlanner({ tripId, onClose, onAccepted }) {
           </ul>
         )}
 
-        <div className="modal-actions">
-          <span className="spacer" />
-          <button className="btn btn-ghost" onClick={onClose}>
-            Not now
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={accept}
-            disabled={busy || chosen.length === 0}
-          >
-            {busy ? "Adding…" : `Add ${chosen.length} to my trip`}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

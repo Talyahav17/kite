@@ -8,6 +8,7 @@ import { Suggestions } from "./Suggestions.jsx";
 import { sortItems } from "./lib/itinerary.js";
 import ImportItems from "./ImportItems.jsx";
 import DayPlanner from "./DayPlanner.jsx";
+import Modal from "./Modal.jsx";
 
 const EMPTY_ITEM = {
   date: "",
@@ -425,96 +426,116 @@ export default function TripDetail() {
       )}
 
       {sharing && (
-        <div
-          className="modal-backdrop"
-          onClick={() => {
+        <Modal
+          size="small"
+          error={error}
+          onClose={() => {
             setSharing(false);
             setConfirmingUnshare(false);
           }}
-        >
-          <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
-            {confirmingUnshare ? (
+          actions={
+            confirmingUnshare ? (
               <>
-                <h2>Stop sharing “{trip.title}”?</h2>
-                <p className="confirm-text">
-                  Everyone holding the current link loses access straight away. If you
-                  share again later the link will be <strong>different</strong> — the one
-                  you already sent stays dead.
-                </p>
-                {error && <div className="form-error">{error}</div>}
-                <div className="modal-actions">
-                  <span className="spacer" />
-                  <button
-                    className="btn btn-ghost"
-                    onClick={() => setConfirmingUnshare(false)}
-                  >
-                    Keep sharing
-                  </button>
-                  <button className="btn btn-danger-solid" onClick={stopSharing}>
-                    Stop sharing
-                  </button>
-                </div>
+                <span className="spacer" />
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setConfirmingUnshare(false)}
+                >
+                  Keep sharing
+                </button>
+                <button className="btn btn-danger-solid" onClick={stopSharing}>
+                  Stop sharing
+                </button>
               </>
             ) : trip.share_token ? (
               <>
-                <h2>Share this trip</h2>
-                <p className="confirm-text">
-                  Anyone with this link can view the itinerary. They can’t edit it and
-                  don’t need an account.
-                </p>
-                <input
-                  className="share-link"
-                  readOnly
-                  value={`${window.location.origin}/s/${trip.share_token}`}
-                  onFocus={(e) => e.target.select()}
-                />
-                <div className="modal-actions">
-                  <span className="spacer" />
-                  <button className="btn" onClick={copyShareLink}>
-                    Copy link
-                  </button>
-                  <button className="btn btn-primary" onClick={() => setSharing(false)}>
-                    Done
-                  </button>
-                </div>
-                {/* kept away from the dismiss buttons — T-005 */}
-                <button
-                  className="btn-link btn-link-danger"
-                  onClick={() => setConfirmingUnshare(true)}
-                >
-                  Stop sharing this trip
+                <span className="spacer" />
+                <button className="btn" onClick={copyShareLink}>
+                  Copy link
+                </button>
+                <button className="btn btn-primary" onClick={() => setSharing(false)}>
+                  Done
                 </button>
               </>
             ) : (
               <>
-                <h2>Share this trip</h2>
-                <p className="confirm-text">
-                  Create a link that lets travel companions see this itinerary — view
-                  only, no account needed. You can turn it off at any time.
-                </p>
-                {error && <div className="form-error">{error}</div>}
-                <div className="modal-actions">
-                  <span className="spacer" />
-                  <button className="btn btn-ghost" onClick={() => setSharing(false)}>
-                    Cancel
-                  </button>
-                  <button className="btn btn-primary" onClick={startSharing}>
-                    Create link
-                  </button>
-                </div>
+                <span className="spacer" />
+                <button className="btn btn-ghost" onClick={() => setSharing(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={startSharing}>
+                  Create link
+                </button>
               </>
-            )}
-          </div>
-        </div>
+            )
+          }
+          after={
+            !confirmingUnshare && trip.share_token ? (
+              <button
+                className="btn-link btn-link-danger"
+                onClick={() => setConfirmingUnshare(true)}
+              >
+                Stop sharing this trip
+              </button>
+            ) : null
+          }
+        >
+          {confirmingUnshare ? (
+            <>
+              <h2>Stop sharing “{trip.title}”?</h2>
+              <p className="confirm-text">
+                Everyone holding the current link loses access straight away. If you
+                share again later the link will be <strong>different</strong> — the one
+                you already sent stays dead.
+              </p>
+            </>
+          ) : trip.share_token ? (
+            <>
+              <h2>Share this trip</h2>
+              <p className="confirm-text">
+                Anyone with this link can view the itinerary. They can’t edit it and
+                don’t need an account.
+              </p>
+              <input
+                className="share-link"
+                readOnly
+                value={`${window.location.origin}/s/${trip.share_token}`}
+                onFocus={(e) => e.target.select()}
+              />
+            </>
+          ) : (
+            <>
+              <h2>Share this trip</h2>
+              <p className="confirm-text">
+                Create a link that lets travel companions see this itinerary — view
+                only, no account needed. You can turn it off at any time.
+              </p>
+            </>
+          )}
+        </Modal>
       )}
 
       {budgeting !== null && (
-        <div className="modal-backdrop" onClick={() => setBudgeting(null)}>
-          <form
-            className="modal modal-small card"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={saveBudget}
-          >
+        <Modal
+          as="form"
+          size="small"
+          error={error}
+          onClose={() => setBudgeting(null)}
+          onSubmit={saveBudget}
+          actions={
+            <>
+              <span className="spacer" />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setBudgeting(null)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary">Save</button>
+            </>
+          }
+        >
             <h2>Trip budget</h2>
             <p className="confirm-text">
               Set a target and Kite tracks what’s left as you plan. Leave it empty to
@@ -531,30 +552,17 @@ export default function TripDetail() {
                 autoFocus
               />
             </label>
-            {error && <div className="form-error">{error}</div>}
-            <div className="modal-actions">
-              <span className="spacer" />
-              <button type="button" className="btn btn-ghost" onClick={() => setBudgeting(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary">Save</button>
-            </div>
-          </form>
-        </div>
+        </Modal>
       )}
 
       {confirmingItemDelete && editing && (
-        <div
-          className="modal-backdrop modal-backdrop-top"
-          onClick={() => setConfirmingItemDelete(false)}
-        >
-          <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
-            <h2>Delete “{editing.title}”?</h2>
-            <p className="confirm-text">
-              This removes it from your itinerary. It can’t be undone.
-            </p>
-            {error && <div className="form-error">{error}</div>}
-            <div className="modal-actions">
+        <Modal
+          size="small"
+          top
+          error={error}
+          onClose={() => setConfirmingItemDelete(false)}
+          actions={
+            <>
               <span className="spacer" />
               <button
                 className="btn btn-ghost"
@@ -565,21 +573,23 @@ export default function TripDetail() {
               <button className="btn btn-danger-solid" onClick={() => removeItem(editing)}>
                 Delete
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <h2>Delete “{editing.title}”?</h2>
+          <p className="confirm-text">
+            This removes it from your itinerary. It can’t be undone.
+          </p>
+        </Modal>
       )}
 
       {confirmingDelete && (
-        <div className="modal-backdrop" onClick={() => setConfirmingDelete(false)}>
-          <div className="modal modal-small card" onClick={(e) => e.stopPropagation()}>
-            <h2>Delete “{trip.title}”?</h2>
-            <p className="confirm-text">
-              This deletes the trip and all {items.length}{" "}
-              {items.length === 1 ? "item" : "items"} in it. It can’t be undone.
-            </p>
-            {error && <div className="form-error">{error}</div>}
-            <div className="modal-actions">
+        <Modal
+          size="small"
+          error={error}
+          onClose={() => setConfirmingDelete(false)}
+          actions={
+            <>
               <span className="spacer" />
               <button className="btn btn-ghost" onClick={() => setConfirmingDelete(false)}>
                 Cancel
@@ -587,18 +597,51 @@ export default function TripDetail() {
               <button className="btn btn-danger-solid" onClick={removeTrip}>
                 Delete trip
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <h2>Delete “{trip.title}”?</h2>
+          <p className="confirm-text">
+            This deletes the trip and all {items.length}{" "}
+            {items.length === 1 ? "item" : "items"} in it. It can’t be undone.
+          </p>
+        </Modal>
       )}
 
       {editing && (
-        <div className="modal-backdrop" onClick={() => setEditing(null)}>
-          <form
-            className="modal card"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={saveItem}
-          >
+        <Modal
+          as="form"
+          error={error}
+          onClose={() => setEditing(null)}
+          onSubmit={saveItem}
+          actions={
+            <>
+              {editing.id && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-danger"
+                  onClick={() => setConfirmingItemDelete(true)}
+                >
+                  Delete
+                </button>
+              )}
+              <span className="spacer" />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setEditing(null)}
+              >
+                Cancel
+              </button>
+              {!editing.id && (
+                <button type="button" className="btn" onClick={saveAndAddAnother}>
+                  Add another
+                </button>
+              )}
+              <button className="btn btn-primary">{editing.id ? "Save" : "Add"}</button>
+            </>
+          }
+        >
             <h2>{editing.id ? "Edit item" : "Add to itinerary"}</h2>
 
             <div className="type-picker">
@@ -674,31 +717,7 @@ export default function TripDetail() {
               <textarea rows={2} value={editing.notes} onChange={set("notes")} />
             </label>
 
-            {error && <div className="form-error">{error}</div>}
-
-            <div className="modal-actions">
-              {editing.id && (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-danger"
-                  onClick={() => setConfirmingItemDelete(true)}
-                >
-                  Delete
-                </button>
-              )}
-              <span className="spacer" />
-              <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>
-                Cancel
-              </button>
-              {!editing.id && (
-                <button type="button" className="btn" onClick={saveAndAddAnother}>
-                  Add another
-                </button>
-              )}
-              <button className="btn btn-primary">{editing.id ? "Save" : "Add"}</button>
-            </div>
-          </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

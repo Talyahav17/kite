@@ -9,7 +9,7 @@
     "install-all": "npm install && npm install --prefix server && npm install --prefix client",
     "test": "node --import ./client/test/register-jsx.mjs --test server/test/*.test.js client/test/*.test.js",
     "lint": "eslint client/src",
-    "test:e2e": "npm run build --prefix client && playwright test"
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
