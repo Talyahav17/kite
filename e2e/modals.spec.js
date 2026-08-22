@@ -90,3 +90,51 @@ test("a modal shows the reason when its action fails", async ({ page, context })
   await expect(page.locator(".modal .form-error")).toBeVisible();
   await expect(page.locator(".modal .form-error")).toContainText(/not found/i);
 });
+
+// P-060. Tab used to walk straight out of a modal and behind the backdrop, so
+// a keyboard user lost the dialog while it was still covering the page and
+// still the only thing they could act on.
+test("focus stays inside a modal and comes back out where it started", async ({ page }) => {
+  const insideModal = () =>
+    page.evaluate(() => Boolean(document.activeElement?.closest(".modal")));
+
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  // more presses than there are controls, so it must have wrapped
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press("Tab");
+    expect(await insideModal()).toBe(true);
+  }
+
+  // and backwards past the start
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press("Shift+Tab");
+    expect(await insideModal()).toBe(true);
+  }
+
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+
+  // the keyboard goes back where it was, not to the top of the document
+  const returned = await page.evaluate(() => document.activeElement?.textContent?.trim());
+  expect(returned).toBe("Share");
+});
+
+test("a modal that opens on top of another traps focus in the top one", async ({ page }) => {
+  await page.getByText("Nothing planned yet — click to add something").first().click();
+  await page.getByLabel("Title").fill("Something to delete");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+
+  await page.getByText("Something to delete").click();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+
+  // the confirmation is the top layer; Tab must not reach the edit form beneath
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press("Tab");
+    const inTop = await page.evaluate(() =>
+      Boolean(document.activeElement?.closest(".modal-backdrop-top"))
+    );
+    expect(inTop).toBe(true);
+  }
+});
