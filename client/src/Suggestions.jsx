@@ -29,12 +29,16 @@ export function Suggestions({ trip, items, onAdd }) {
           .then((d) => (d.suggestions.length ? c : null))
           .catch(() => null)
       )
-    ).then((res) => {
-      if (!live) return;
-      const usable = res.filter(Boolean);
-      setKnown(usable);
-      setCity((current) => (usable.includes(current) ? current : usable[0] || ""));
-    });
+    )
+      .then((res) => {
+        if (!live) return;
+        const usable = res.filter(Boolean);
+        setKnown(usable);
+        setCity((current) => (usable.includes(current) ? current : usable[0] || ""));
+      })
+      // each request above already falls back to null, so this only catches a
+      // throw from the state updates themselves — but unhandled is unhandled.
+      .catch(() => setKnown([]));
     return () => {
       live = false;
     };

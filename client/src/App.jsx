@@ -23,7 +23,14 @@ export default function App() {
   }, []);
 
   async function logout() {
-    await api.logout();
+    // Signing out must never fail to sign you out. If the request errors the
+    // session is either already gone or unreachable; in both cases leaving
+    // the user apparently logged in is the wrong answer.
+    try {
+      await api.logout();
+    } catch {
+      // deliberately ignored — the local sign-out below is what matters
+    }
     setUser(null);
     navigate("/");
   }

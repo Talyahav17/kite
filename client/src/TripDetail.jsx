@@ -155,15 +155,28 @@ export default function TripDetail() {
   }
 
   async function removeItem(item) {
-    await api.deleteItem(item.id);
-    setItems(items.filter((i) => i.id !== item.id));
-    setConfirmingItemDelete(false);
-    setEditing(null);
+    setError("");
+    try {
+      await api.deleteItem(item.id);
+      setItems(items.filter((i) => i.id !== item.id));
+      setConfirmingItemDelete(false);
+      setEditing(null);
+    } catch (err) {
+      // the modals stay open: the item is still there, and closing them
+      // would say otherwise.
+      failed(err);
+    }
   }
 
   async function removeTrip() {
-    await api.deleteTrip(trip.id);
-    navigate("/");
+    setError("");
+    try {
+      await api.deleteTrip(trip.id);
+      navigate("/");
+    } catch (err) {
+      // never navigate away on failure — that would look like it worked
+      failed(err);
+    }
   }
 
   // P-018
@@ -540,6 +553,7 @@ export default function TripDetail() {
             <p className="confirm-text">
               This removes it from your itinerary. It can’t be undone.
             </p>
+            {error && <div className="form-error">{error}</div>}
             <div className="modal-actions">
               <span className="spacer" />
               <button
@@ -564,6 +578,7 @@ export default function TripDetail() {
               This deletes the trip and all {items.length}{" "}
               {items.length === 1 ? "item" : "items"} in it. It can’t be undone.
             </p>
+            {error && <div className="form-error">{error}</div>}
             <div className="modal-actions">
               <span className="spacer" />
               <button className="btn btn-ghost" onClick={() => setConfirmingDelete(false)}>
