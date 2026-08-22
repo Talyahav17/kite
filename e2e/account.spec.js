@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import assert from "node:assert/strict";
 import { freshUser, signUp, createTrip } from "./helpers.js";
 
 // P-056 (T-008). The risky half of this feature is everything that must NOT
@@ -86,4 +87,45 @@ test("a deleted account's share link stops working", async ({ page, browser }) =
   await strangerPage.reload();
   await expect(strangerPage.getByRole("heading", { name: "Shared then deleted" })).toHaveCount(0);
   await stranger.close();
+});
+
+// P-059. The point of this feature is that the file is real and readable, so
+// the test opens it rather than trusting that a download fired.
+test("a traveller can download their trips before deleting anything", async ({ page }) => {
+  const user = freshUser("export");
+  await signUp(page, user);
+  await createTrip(page, {
+    destination: "Japan",
+    start: "2027-04-10",
+    end: "2027-04-12",
+    title: "Trip worth keeping",
+  });
+
+  await page.getByText("Nothing planned yet — click to add something").first().click();
+  await page.getByLabel("Title").fill("Golden Pavilion");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText("Golden Pavilion")).toBeVisible();
+
+  await page.getByRole("link", { name: /All trips/ }).click();
+  await page.getByRole("link", { name: user.name }).click();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Download my trips" }).click(),
+  ]);
+
+  expect(download.suggestedFilename()).toMatch(/^kite-export-\d{4}-\d{2}-\d{2}\.json$/);
+
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  const data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+
+  assert(data);
+  expect(data.format).toBe("kite-export-v1");
+  expect(data.account.email).toBe(user.email);
+  expect(data.trips).toHaveLength(1);
+  expect(data.trips[0].title).toBe("Trip worth keeping");
+  expect(data.trips[0].items.map((i) => i.title)).toEqual(["Golden Pavilion"]);
+  expect(JSON.stringify(data)).not.toContain("password");
 });

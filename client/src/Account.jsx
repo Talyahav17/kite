@@ -17,6 +17,7 @@ export default function Account() {
   const [password, setPassword] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
   const byPassword = user?.has_password !== false;
@@ -34,6 +35,27 @@ export default function Account() {
       setError(err.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  // P-059: leaving should not have to mean losing it all.
+  async function download() {
+    setError("");
+    setDownloading(true);
+    try {
+      const blob = await api.exportData();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `kite-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -61,6 +83,18 @@ export default function Account() {
           <span className="account-label">Email</span>
           <span>{user.email}</span>
         </div>
+      </div>
+
+      <div className="card account-card">
+        <h2>Your data</h2>
+        <p>
+          Every trip, everything in them, and the ratings you have given — as
+          one JSON file you keep.
+        </p>
+        <button className="btn" onClick={download} disabled={downloading}>
+          {downloading ? "Preparing…" : "Download my trips"}
+        </button>
+        {error && !confirming && <div className="form-error">{error}</div>}
       </div>
 
       <div className="card account-card account-danger">
@@ -101,7 +135,8 @@ export default function Account() {
           <h2>Delete “{user.email}”?</h2>
           <p className="confirm-text">
             Everything goes: your trips, everything in them, your ratings, and
-            any link you have shared. There is no undo and no copy kept.
+            any link you have shared. There is no undo and no copy kept. If
+            you want your itineraries, close this and download them first.
           </p>
           {byPassword ? (
             <label>

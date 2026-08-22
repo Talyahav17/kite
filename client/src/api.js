@@ -15,6 +15,17 @@ export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   deleteAccount: (body) => request("/api/auth/me", { method: "DELETE", body }),
+
+  // Returns the file itself rather than parsed JSON — the caller saves it to
+  // disk, and re-serialising a document we already have as text is waste.
+  exportData: async () => {
+    const res = await fetch("/api/export", { credentials: "same-origin" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return res.blob();
+  },
   me: () => request("/api/auth/me"),
   providers: () => request("/api/auth/providers"),
 
