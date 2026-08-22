@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { api } from "./api.js";
 import { parseRows } from "./lib/importParse.js";
+import Modal from "./Modal.jsx";
 
 export { parseRows };
 
@@ -34,15 +35,26 @@ export default function ImportItems({ tripId, days, onClose, onImported }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <form
-        className="modal card"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => {
-          e.preventDefault();
-          run();
-        }}
-      >
+    <Modal
+      as="form"
+      onClose={onClose}
+      error={error}
+      onSubmit={(e) => {
+        e.preventDefault();
+        run();
+      }}
+      actions={
+        <>
+          <span className="spacer" />
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn btn-primary" disabled={busy || parsed.length === 0}>
+            {busy ? "Adding…" : `Add ${parsed.length || ""} items`.trim()}
+          </button>
+        </>
+      }
+    >
         <h2>Paste your plan</h2>
         <p className="confirm-text">
           One item per line, copied straight from a spreadsheet. Columns can be
@@ -80,18 +92,6 @@ Dinner at Roscioli\tDay 2\t19:30\t90\tfood`}
           </div>
         )}
 
-        {error && <div className="form-error">{error}</div>}
-
-        <div className="modal-actions">
-          <span className="spacer" />
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn btn-primary" disabled={busy || parsed.length === 0}>
-            {busy ? "Adding…" : `Add ${parsed.length || ""} items`.trim()}
-          </button>
-        </div>
-      </form>
-    </div>
+    </Modal>
   );
 }

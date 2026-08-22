@@ -42,7 +42,10 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 
   webServer: {
-    command: "node server/index.js",
+    // The build lives here, not in the npm script, so that `npx playwright
+    // test` cannot quietly run against a stale client/dist. It can: it did,
+    // and a sabotaged component still passed every test until the rebuild.
+    command: "npm run build --prefix client && node server/index.js",
     cwd: root,
     url: `${baseURL}/healthz`,
     reuseExistingServer: false,
