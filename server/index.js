@@ -149,6 +149,35 @@ app.post("/api/auth/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+// P-056 (T-008): leaving must be possible, and it must actually remove things.
+//
+// users -> trips -> items and users -> ratings all cascade, and foreign keys
+// are ON in db.js, so deleting the row deletes everything the person owns. Any
+// share links they had published die with the trips that carried them.
+//
+// Gated behind re-authentication: a stolen or borrowed session should not be
+// enough to destroy somebody's account. Google-only accounts have no password
+// to check (password_hash is ''), so those confirm by typing their address.
+app.delete("/api/auth/me", requireAuth, loginLimiter, (req, res) => {
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+
+  const { password, confirmEmail } = req.body || {};
+
+  if (user.password_hash) {
+    if (!password || !bcrypt.compareSync(password, user.password_hash))
+      return res.status(401).json({ error: "That password is not right." });
+  } else if (String(confirmEmail || "").trim().toLowerCase() !== user.email) {
+    return res
+      .status(400)
+      .json({ error: "Type your email address exactly as shown to confirm." });
+  }
+
+  db.prepare("DELETE FROM users WHERE id = ?").run(user.id);
+  res.clearCookie(COOKIE, COOKIE_OPTIONS);
+  res.json({ ok: true });
+});
+
 // ---------- sign in with Google (P-045) ----------
 
 // The client asks what is available rather than guessing, so the button only
@@ -240,10 +269,19 @@ function findOrCreateGoogleUser({ providerId, email, name }) {
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db
-    .prepare("SELECT id, email, name FROM users WHERE id = ?")
+    .prepare("SELECT id, email, name, password_hash, auth_provider FROM users WHERE id = ?")
     .get(req.user.id);
   if (!user) return res.status(401).json({ error: "Account no longer exists" });
-  res.json({ user });
+  // P-056: the delete dialog has to ask for the right thing, and a Google-only
+  // account has no password to ask for. The hash itself never leaves here.
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      has_password: Boolean(user.password_hash),
+    },
+  });
 });
 
 // ---------- trips ----------

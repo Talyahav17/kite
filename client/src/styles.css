@@ -1129,3 +1129,16 @@ input:focus, textarea:focus, select:focus {
 .empty-emoji { font-size: 2.8rem; margin-bottom: 10px; }
 .empty-state h2 { font-size: 1.25rem; margin-bottom: 6px; }
 .empty-state p { max-width: 34ch; margin: 0 auto 18px; }
+
+/* P-056: account page */
+.account-page { max-width: 640px; }
+.account-card { margin-top: 16px; }
+.account-row { display: flex; gap: 16px; padding: 6px 0; }
+.account-label { width: 90px; color: var(--ink-soft); flex: none; }
+.account-danger { border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+.account-danger h2 { margin-top: 0; }
+.account-danger p { color: var(--ink-soft); font-size: 0.92rem; }
+
+/* the name in the header is a link to the account page */
+a.topbar-name { text-decoration: none; color: inherit; }
+a.topbar-name:hover { text-decoration: underline; }
