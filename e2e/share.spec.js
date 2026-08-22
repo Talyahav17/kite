@@ -75,3 +75,42 @@ test("revoking on a lapsed session says so instead of failing silently", async (
     timeout: 10_000,
   });
 });
+
+// T-011 (P-055). Priya planned two days of a five-day trip, sent the link, and
+// her friends could not tell whether the rest was unplanned, the trip ended
+// early, or the page had failed to load — the days simply were not there,
+// while the header still counted them.
+test("a shared trip shows its unplanned days instead of hiding them", async ({
+  page,
+  browser,
+}) => {
+  await signUp(page, freshUser("empty-days"));
+  await createTrip(page, {
+    destination: "Japan",
+    start: "2027-04-10",
+    end: "2027-04-12",
+    title: "Three days, one planned",
+  });
+
+  // plan the first day only
+  await page.getByText("Nothing planned yet — click to add something").first().click();
+  await page.getByLabel("Title").fill("Fushimi Inari");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText("Fushimi Inari")).toBeVisible();
+
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Create link" }).click();
+  const url = await page.locator("input.share-link").inputValue();
+
+  const stranger = await browser.newContext();
+  const strangerPage = await stranger.newPage();
+  await strangerPage.goto(url);
+
+  // the header promises three days, so all three must be accounted for
+  await expect(strangerPage.getByText("3 days · 1 items")).toBeVisible();
+  await expect(strangerPage.locator(".day")).toHaveCount(3);
+  await expect(strangerPage.getByText("Fushimi Inari")).toBeVisible();
+  await expect(strangerPage.getByText("Nothing planned for this day.")).toHaveCount(2);
+
+  await stranger.close();
+});
