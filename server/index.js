@@ -149,6 +149,55 @@ app.post("/api/auth/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+// P-059: take your itinerary with you.
+//
+// P-056 made leaving possible, but leaving meant losing everything. This is
+// offered beside the delete button so the irreversible step is not also a
+// lossy one. Scoped to the signed-in user by every query — an export endpoint
+// that leaked across accounts would be the worst kind of bug in this file.
+app.get("/api/export", requireAuth, (req, res) => {
+  const user = db
+    .prepare("SELECT id, email, name, created_at FROM users WHERE id = ?")
+    .get(req.user.id);
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+
+  const trips = db
+    .prepare("SELECT * FROM trips WHERE user_id = ? ORDER BY start_date, id")
+    .all(user.id);
+
+  const itemsFor = db.prepare(`SELECT * FROM items WHERE trip_id = ? ${ITEMS_ORDER}`);
+
+  // Ratings carry the place name, or the export is a list of meaningless ids.
+  const ratings = db
+    .prepare(
+      `SELECT r.stars, r.note, r.created_at, a.name AS place, a.city
+         FROM ratings r
+         JOIN attractions a ON a.id = r.attraction_id
+        WHERE r.user_id = ?
+        ORDER BY r.created_at, r.id`
+    )
+    .all(user.id);
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="kite-export-${todayStamp()}.json"`
+  );
+  res.json({
+    exported_at: new Date().toISOString(),
+    format: "kite-export-v1",
+    account: { name: user.name, email: user.email, joined: user.created_at },
+    trips: trips.map((trip) => ({ ...trip, items: itemsFor.all(trip.id) })),
+    ratings,
+  });
+});
+
+/** YYYY-MM-DD in local time, for a filename a person can read. */
+function todayStamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 // P-056 (T-008): leaving must be possible, and it must actually remove things.
 //
 // users -> trips -> items and users -> ratings all cascade, and foreign keys

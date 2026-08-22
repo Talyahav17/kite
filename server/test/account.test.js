@@ -149,3 +149,94 @@ test("a Google-only account confirms by typing its address, not a password", asy
   assert.equal(ok.status, 200, "case and whitespace are forgiven, the address is not");
   assert.equal((await api("GET", "/api/auth/me")).status, 401);
 });
+
+// ---------- P-059: export before delete ----------
+
+test("an export carries the traveller's own trips, items and ratings", async () => {
+  const api = client();
+  await api("POST", "/api/auth/register", {
+    name: "Exporter",
+    email: "export@example.com",
+    password: "password123",
+  });
+  const { body } = await api("POST", "/api/trips", {
+    title: "Kyoto",
+    destination: "Japan",
+    start_date: "2027-04-10",
+    end_date: "2027-04-12",
+    notes: "cherry blossom",
+  });
+  await api("POST", `/api/trips/${body.trip.id}/items`, {
+    title: "Fushimi Inari",
+    type: "attraction",
+    date: "2027-04-10",
+    time: "09:30",
+    cost: 0,
+  });
+
+  const places = await api("GET", "/api/suggestions?city=Tokyo");
+  await api("POST", `/api/attractions/${places.body.suggestions[0].id}/rate`, {
+    stars: 4,
+    note: "worth the queue",
+  });
+
+  const res = await api("GET", "/api/export");
+  assert.equal(res.status, 200);
+  assert.equal(res.body.format, "kite-export-v1");
+  assert.equal(res.body.account.email, "export@example.com");
+
+  assert.equal(res.body.trips.length, 1);
+  assert.equal(res.body.trips[0].title, "Kyoto");
+  assert.equal(res.body.trips[0].notes, "cherry blossom");
+  assert.equal(res.body.trips[0].items.length, 1);
+  assert.equal(res.body.trips[0].items[0].title, "Fushimi Inari");
+
+  assert.equal(res.body.ratings.length, 1);
+  assert.equal(res.body.ratings[0].stars, 4);
+  assert.ok(res.body.ratings[0].place, "a rating without the place name is a meaningless id");
+
+  assert.match(
+    res.headers.get("content-disposition") || "",
+    /attachment; filename="kite-export-\d{4}-\d{2}-\d{2}\.json"/
+  );
+});
+
+test("an export never carries a password hash or anyone else's trips", async () => {
+  const mine = client();
+  await mine("POST", "/api/auth/register", {
+    name: "Mine",
+    email: "mine@example.com",
+    password: "password123",
+  });
+  await mine("POST", "/api/trips", {
+    title: "Mine only",
+    start_date: "2027-04-10",
+    end_date: "2027-04-11",
+  });
+
+  const theirs = client();
+  await theirs("POST", "/api/auth/register", {
+    name: "Theirs",
+    email: "theirs@example.com",
+    password: "password123",
+  });
+  await theirs("POST", "/api/trips", {
+    title: "Somebody else's secret trip",
+    start_date: "2027-05-01",
+    end_date: "2027-05-02",
+  });
+
+  const res = await mine("GET", "/api/export");
+  const dump = JSON.stringify(res.body);
+
+  assert.ok(!/password_hash/.test(dump), "the hash must never leave the server");
+  assert.ok(!/Somebody else/.test(dump), "one account's export cannot contain another's trips");
+  assert.ok(!/theirs@example\.com/.test(dump));
+  assert.equal(res.body.trips.length, 1);
+  assert.equal(res.body.trips[0].title, "Mine only");
+});
+
+test("a signed-out visitor cannot export anything", async () => {
+  const anon = client();
+  assert.equal((await anon("GET", "/api/export")).status, 401);
+});
