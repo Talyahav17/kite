@@ -14,6 +14,7 @@ export const api = {
   register: (body) => request("/api/auth/register", { method: "POST", body }),
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  deleteAccount: (body) => request("/api/auth/me", { method: "DELETE", body }),
   me: () => request("/api/auth/me"),
   providers: () => request("/api/auth/providers"),
 

@@ -22,6 +22,7 @@ import Trips, { TripCard } from "../src/Trips.jsx";
 import TripDetail from "../src/TripDetail.jsx";
 import SharedTrip from "../src/SharedTrip.jsx";
 import Auth from "../src/Auth.jsx";
+import Account from "../src/Account.jsx";
 import KiteLogo from "../src/KiteLogo.jsx";
 import SkyPanel from "../src/SkyPanel.jsx";
 import ImportItems from "../src/ImportItems.jsx";
@@ -89,6 +90,7 @@ test("every page renders without throwing", () => {
     "trip detail": h(TripDetail),
     "shared trip": h(SharedTrip),
     "sign in": h(Auth),
+    "account": h(Account),
     "paste import": h(ImportItems, { tripId: 1, days: DAYS, onClose() {}, onImported() {} }),
   };
   for (const [name, element] of Object.entries(pages)) {

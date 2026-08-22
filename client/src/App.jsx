@@ -6,6 +6,7 @@ import Trips from "./Trips.jsx";
 import TripDetail from "./TripDetail.jsx";
 import KiteLogo from "./KiteLogo.jsx";
 import SharedTrip from "./SharedTrip.jsx";
+import Account from "./Account.jsx";
 
 export const UserContext = createContext(null);
 export const useUser = () => useContext(UserContext);
@@ -56,7 +57,9 @@ export default function App() {
         </Link>
         {user && (
           <div className="topbar-right">
-            <span className="topbar-name">{user.name}</span>
+            <Link to="/account" className="topbar-name">
+              {user.name}
+            </Link>
             <button className="btn btn-ghost" onClick={logout}>
               Log out
             </button>
@@ -69,6 +72,7 @@ export default function App() {
           <Route path="/s/:token" element={<SharedTrip />} />
           <Route path="/" element={<Trips />} />
           <Route path="/trips/:id" element={<TripDetail />} />
+          <Route path="/account" element={<Account />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
