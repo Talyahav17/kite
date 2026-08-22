@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ITEM_TYPES } from "./api.js";
+import { useUser } from "./App.jsx";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
 import { Suggestions } from "./Suggestions.jsx";
@@ -33,12 +34,23 @@ export default function TripDetail() {
   const [importing, setImporting] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [budgeting, setBudgeting] = useState(null); // null | draft string
+  const { setUser } = useUser();
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
 
   function flash(message) {
     setToast(message);
     setTimeout(() => setToast(""), 2400);
+  }
+
+  // P-051: an async click handler with no catch rejects into nothing — the
+  // modal just sits there and the user cannot tell whether it worked. Priya
+  // hit this on "Stop sharing" and could only settle it by checking the
+  // error log. A lapsed session belongs back at sign-in, as in Trips.jsx;
+  // anything else is said out loud where the button was pressed.
+  function failed(err) {
+    if (/not logged in|session expired|no longer exists/i.test(err.message)) setUser(null);
+    else setError(err.message);
   }
 
   // P-013: Escape closes the topmost modal
@@ -146,18 +158,30 @@ export default function TripDetail() {
 
   // P-018
   async function startSharing() {
-    const { share_token } = await api.shareTrip(trip.id);
-    setTrip({ ...trip, share_token });
-    flash("Share link created");
+    setError("");
+    try {
+      const { share_token } = await api.shareTrip(trip.id);
+      setTrip({ ...trip, share_token });
+      flash("Share link created");
+    } catch (err) {
+      failed(err);
+    }
   }
 
   // P-030: only ever reached through the confirmation step — revoking is
   // permanent for links already sent, since re-sharing mints a new token.
   async function stopSharing() {
-    await api.unshareTrip(trip.id);
-    setTrip({ ...trip, share_token: null });
-    setConfirmingUnshare(false);
-    flash("Sharing turned off — the old link no longer works");
+    setError("");
+    try {
+      await api.unshareTrip(trip.id);
+      setTrip({ ...trip, share_token: null });
+      setConfirmingUnshare(false);
+      flash("Sharing turned off — the old link no longer works");
+    } catch (err) {
+      // the modal stays open on failure: the link has NOT been revoked, and
+      // closing it would imply otherwise.
+      failed(err);
+    }
   }
 
   async function copyShareLink() {
@@ -240,7 +264,13 @@ export default function TripDetail() {
           <button className="btn btn-small" onClick={() => setImporting(true)}>
             Paste plan
           </button>
-          <button className="btn btn-small" onClick={() => setSharing(true)}>
+          <button
+            className="btn btn-small"
+            onClick={() => {
+              setError("");
+              setSharing(true);
+            }}
+          >
             {trip.share_token ? "🔗 Shared" : "Share"}
           </button>
           <button
@@ -376,6 +406,7 @@ export default function TripDetail() {
                   share again later the link will be <strong>different</strong> — the one
                   you already sent stays dead.
                 </p>
+                {error && <div className="form-error">{error}</div>}
                 <div className="modal-actions">
                   <span className="spacer" />
                   <button
@@ -426,6 +457,7 @@ export default function TripDetail() {
                   Create a link that lets travel companions see this itinerary — view
                   only, no account needed. You can turn it off at any time.
                 </p>
+                {error && <div className="form-error">{error}</div>}
                 <div className="modal-actions">
                   <span className="spacer" />
                   <button className="btn btn-ghost" onClick={() => setSharing(false)}>
