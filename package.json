@@ -1,14 +1,17 @@
 {
   "name": "kite",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "backup": "node server/backup.js",
     "photos": "node server/fetch-photos.js",
     "install-all": "npm install && npm install --prefix server && npm install --prefix client",
-    "test": "node --import ./client/test/register-jsx.mjs --test server/test/*.test.js client/test/*.test.js"
+    "test": "node --import ./client/test/register-jsx.mjs --test server/test/*.test.js client/test/*.test.js",
+    "test:e2e": "npm run build --prefix client && playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "concurrently": "^8.2.2"
   }
 }

@@ -706,7 +706,11 @@ app.get("/api/errors", requireAuth, (req, res) => {
 // One process serves both, so there is no CORS, no second service, and the
 // cookie is same-origin. In development Vite serves the client and proxies
 // /api here instead, so this block stays out of the way.
-if (isProduction) {
+// KITE_SERVE_CLIENT serves the built client without switching on production
+// mode. The end-to-end tests need the single-process shape production has, but
+// production also marks the cookie Secure, which a browser will not send over
+// plain http — so the tests could never sign in.
+if (isProduction || process.env.KITE_SERVE_CLIENT) {
   const clientDist = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "../client/dist"

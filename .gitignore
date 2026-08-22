@@ -7,3 +7,6 @@ dist/
 
 # business records live in the private kite-company repo — never track them here
 docs/company/
+e2e/.tmp/
+test-results/
+playwright-report/
