@@ -14,7 +14,7 @@
 # A single machine is correct for now. SQLite is one writer, and the rate
 # limiter counts in memory per process — a second machine would split both.
 
-app = "kite"
+app = "kite-talyahav"
 primary_region = "ams"
 
 [build]
