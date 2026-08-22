@@ -42,3 +42,36 @@ test("a shared trip is readable by a stranger, and stops being readable when rev
 
   await stranger.close();
 });
+
+// P-051. Priya pressed "Stop sharing" on a session that had quietly lapsed and
+// got nothing back — no message, no sign-in prompt, the modal just sitting
+// there. The link had not been revoked, but she could only establish that from
+// the error log. An async click handler with no catch rejects into silence.
+test("revoking on a lapsed session says so instead of failing silently", async ({
+  page,
+  context,
+}) => {
+  await signUp(page, freshUser("revoke-lapsed"));
+  await createTrip(page, {
+    destination: "Japan",
+    start: "2027-04-10",
+    end: "2027-04-12",
+    title: "Osaka detour",
+  });
+
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Create link" }).click();
+  await expect(page.locator("input.share-link")).toBeVisible();
+
+  // the tab stays open; the session goes away underneath it
+  await context.clearCookies();
+
+  await page.getByRole("button", { name: "Stop sharing this trip" }).click();
+  await page.getByRole("button", { name: "Stop sharing", exact: true }).click();
+
+  // a lapsed session belongs back at sign-in, as everywhere else in the app —
+  // what it must never do is leave the modal open saying nothing at all.
+  await expect(page.getByRole("heading", { name: "Sign in to Kite." })).toBeVisible({
+    timeout: 10_000,
+  });
+});
