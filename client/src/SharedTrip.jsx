@@ -70,7 +70,6 @@ export default function SharedTrip() {
       <div className="days">
         {days.map((date, i) => {
           const dayItems = byDay.get(date) || [];
-          if (dayItems.length === 0) return null;
           const cities = dayItems.filter((it) => it.type === "city");
           return (
             <section key={date} className="day card">
@@ -85,12 +84,21 @@ export default function SharedTrip() {
                   )}
                 </div>
               </div>
-              <DayRoute items={dayItems} />
-              <ul className="item-list">
-                {dayItems.map((it) => (
-                  <ItemRow key={it.id} item={it} />
-                ))}
-              </ul>
+              {/* T-011: an empty day used to vanish, so a link-holder could not
+                  tell "not planned yet" from "the trip ends here" from "the
+                  rest didn't load" — while the header still said 5 days. */}
+              {dayItems.length === 0 ? (
+                <p className="day-empty day-empty-static">Nothing planned for this day.</p>
+              ) : (
+                <>
+                  <DayRoute items={dayItems} />
+                  <ul className="item-list">
+                    {dayItems.map((it) => (
+                      <ItemRow key={it.id} item={it} />
+                    ))}
+                  </ul>
+                </>
+              )}
             </section>
           );
         })}

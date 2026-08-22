@@ -639,6 +639,10 @@ input:focus, textarea:focus, select:focus {
 
 .day-empty:hover { color: var(--accent); border-color: var(--accent); }
 
+/* the shared view is read-only — nothing to click, so nothing that invites it */
+.day-empty-static { cursor: default; }
+.day-empty-static:hover { color: var(--ink-soft); border-color: var(--line); }
+
 .item-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 
 .item {
