@@ -95,3 +95,43 @@ test("a trip keeps its cover for life, and neighbours differ", () => {
   assert.match(style.backgroundImage, /^linear-gradient/);
   assert.ok(style.color, "covers carry the ink colour their text needs");
 });
+
+// ---------- T-002: untimed items belong at the end of their day ----------
+
+test("an item with no time sorts after the timed ones — T-002", () => {
+  const list = [
+    { id: 1, date: "2026-10-01", time: "", title: "Print tickets" },
+    { id: 2, date: "2026-10-01", time: "07:00", title: "Flight" },
+    { id: 3, date: "2026-10-01", time: "19:30", title: "Dinner" },
+  ];
+  assert.deepEqual(
+    titles(list),
+    ["Flight", "Dinner", "Print tickets"],
+    "an empty time used to sort first, putting a note above a 07:00 flight"
+  );
+});
+
+test("several untimed items keep their insertion order behind the timed ones", () => {
+  const list = [
+    { id: 3, date: "2026-10-01", time: "", title: "Second note" },
+    { id: 1, date: "2026-10-01", time: "", title: "First note" },
+    { id: 2, date: "2026-10-01", time: "09:00", title: "Timed" },
+  ];
+  assert.deepEqual(titles(list), ["Timed", "First note", "Second note"]);
+});
+
+test("untimed items do not jump days — T-002 stays inside its own day", () => {
+  const list = [
+    { id: 1, date: "2026-10-02", time: "09:00", title: "Day two morning" },
+    { id: 2, date: "2026-10-01", time: "", title: "Day one note" },
+  ];
+  assert.deepEqual(titles(list), ["Day one note", "Day two morning"]);
+});
+
+test("undated items still come after every dated one", () => {
+  const list = [
+    { id: 1, date: null, time: "", title: "Insurance docs" },
+    { id: 2, date: "2026-10-01", time: "", title: "Day one note" },
+  ];
+  assert.deepEqual(titles(list), ["Day one note", "Insurance docs"]);
+});

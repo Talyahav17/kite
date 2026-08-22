@@ -8,10 +8,16 @@
  * until the next fetch — that was T-006.
  */
 export function sortItems(list) {
+  const untimed = (i) => (i.time ? 0 : 1);
   return [...list].sort(
     (a, b) =>
       (a.date === null) - (b.date === null) ||
       (a.date || "").localeCompare(b.date || "") ||
+      // T-002: an empty time string sorts first by default, which put a note
+      // with no time above a 07:00 flight. Untimed belongs at the end of its
+      // day. Must match ITEMS_ORDER on the server, or the order changes on
+      // reload — that was T-006.
+      untimed(a) - untimed(b) ||
       (a.time || "").localeCompare(b.time || "") ||
       a.id - b.id
   );

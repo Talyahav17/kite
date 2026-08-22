@@ -284,6 +284,15 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
   });
 });
 
+// T-002 (P-057): undated items sit at the end of the trip, and within a day
+// an item with no time sits after the timed ones. An empty time string sorts
+// first by default, which put "print tickets" above a 07:00 flight.
+//
+// Defined once because it is used in three places, and three copies of an
+// ordering rule is how half of them end up disagreeing.
+const ITEMS_ORDER =
+  "ORDER BY date IS NULL, date, (time IS NULL OR time = ''), time, id";
+
 // ---------- trips ----------
 
 app.get("/api/trips", requireAuth, (req, res) => {
@@ -335,7 +344,7 @@ app.get("/api/trips/:id", requireAuth, (req, res) => {
   if (!trip) return;
   const items = db
     .prepare(
-      "SELECT * FROM items WHERE trip_id = ? ORDER BY date IS NULL, date, time, id"
+      `SELECT * FROM items WHERE trip_id = ? ${ITEMS_ORDER}`
     )
     .all(trip.id);
   res.json({ trip, items });
@@ -393,7 +402,7 @@ app.get("/api/shared/:token", (req, res) => {
   if (!trip) return res.status(404).json({ error: "This shared trip is no longer available" });
 
   const items = db
-    .prepare("SELECT * FROM items WHERE trip_id = ? ORDER BY date IS NULL, date, time, id")
+    .prepare(`SELECT * FROM items WHERE trip_id = ? ${ITEMS_ORDER}`)
     .all(trip.id);
   const { id, user_id, share_token, ...safe } = trip;
   res.json({ trip: safe, items });
@@ -584,7 +593,7 @@ app.get("/api/trips/:id/plan", requireAuth, (req, res) => {
   if (!trip) return;
 
   const items = db
-    .prepare("SELECT * FROM items WHERE trip_id = ? ORDER BY date IS NULL, date, time, id")
+    .prepare(`SELECT * FROM items WHERE trip_id = ? ${ITEMS_ORDER}`)
     .all(trip.id);
 
   const days = tripDays(trip.start_date, trip.end_date);
