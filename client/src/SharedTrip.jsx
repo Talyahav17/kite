@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "./api.js";
 import { fmtRange, tripDays } from "./Trips.jsx";
 import { BudgetCard, DayRoute, ItemRow, fmtDay } from "./Itinerary.jsx";
+import { plural } from "./lib/plural.js";
 
 export default function SharedTrip() {
   const { token } = useParams();
@@ -56,7 +57,7 @@ export default function SharedTrip() {
             {trip.destination && <span>📍 {trip.destination}</span>}
             <span>🗓 {fmtRange(trip.start_date, trip.end_date)}</span>
             <span>
-              {days.length} days · {items.length} items
+              {plural(days.length, "day")} · {plural(items.length, "item")}
             </span>
           </div>
           {trip.notes && <p className="trip-notes">{trip.notes}</p>}

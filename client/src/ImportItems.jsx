@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "./api.js";
 import { parseRows } from "./lib/importParse.js";
 import Modal from "./Modal.jsx";
+import { plural } from "./lib/plural.js";
 
 export { parseRows };
 
@@ -50,7 +51,11 @@ export default function ImportItems({ tripId, days, onClose, onImported }) {
             Cancel
           </button>
           <button className="btn btn-primary" disabled={busy || parsed.length === 0}>
-            {busy ? "Adding…" : `Add ${parsed.length || ""} items`.trim()}
+            {busy
+              ? "Adding…"
+              : parsed.length
+                ? `Add ${plural(parsed.length, "item")}`
+                : "Add items"}
           </button>
         </>
       }
@@ -75,7 +80,7 @@ Dinner at Roscioli\tDay 2\t19:30\t90\tfood`}
         {parsed.length > 0 && (
           <div className="import-preview">
             <div className="import-preview-head">
-              {parsed.length} {parsed.length === 1 ? "item" : "items"} ready
+              {plural(parsed.length, "item")} ready
             </div>
             <ul>
               {parsed.slice(0, 5).map((r, i) => (

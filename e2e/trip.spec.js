@@ -68,3 +68,26 @@ test("a trip that does not exist still says so", async ({ page }) => {
   await expect(page.getByText("Trip not found")).toBeVisible();
   await expect(page.getByRole("link", { name: /Back to trips/ })).toBeVisible();
 });
+
+// P-058: the counts in the header were written by hand at every call site and
+// two of them forgot the singular, so a shared trip told strangers "1 items".
+test("counts read as English for one day and one item", async ({ page }) => {
+  await createTrip(page, {
+    destination: "Japan",
+    start: "2027-04-10",
+    end: "2027-04-10", // a single day
+    title: "One day in Tokyo",
+  });
+
+  await expect(page.getByText("1 day · 0 items", { exact: true })).toBeVisible();
+
+  await page.getByText("Nothing planned yet — click to add something").first().click();
+  await page.getByLabel("Title").fill("Tsukiji market");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+
+  await expect(page.getByText("1 day · 1 item", { exact: true })).toBeVisible();
+
+  // and the same on the card in the trips list
+  await page.getByRole("link", { name: /All trips/ }).click();
+  await expect(page.getByText("1 day · 1 item", { exact: true })).toBeVisible();
+});

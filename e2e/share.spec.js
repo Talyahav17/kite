@@ -107,7 +107,8 @@ test("a shared trip shows its unplanned days instead of hiding them", async ({
   await strangerPage.goto(url);
 
   // the header promises three days, so all three must be accounted for
-  await expect(strangerPage.getByText("3 days · 1 items")).toBeVisible();
+  // P-058: this said "1 items" until the plural helper landed
+  await expect(strangerPage.getByText("3 days · 1 item", { exact: true })).toBeVisible();
   await expect(strangerPage.locator(".day")).toHaveCount(3);
   await expect(strangerPage.getByText("Fushimi Inari")).toBeVisible();
   await expect(strangerPage.getByText("Nothing planned for this day.")).toHaveCount(2);

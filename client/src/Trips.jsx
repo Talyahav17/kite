@@ -7,6 +7,7 @@ import { RatingPrompts } from "./Suggestions.jsx";
 import { fmtRange, tripDays, todayYmd, tripStatus } from "./lib/dates.js";
 import { suggestTripName } from "./lib/tripName.js";
 import DestinationField from "./DestinationField.jsx";
+import { plural } from "./lib/plural.js";
 
 // re-exported so the pages that grew up importing them from here still work
 export { fmtRange, tripDays, todayYmd, tripStatus };
@@ -62,8 +63,7 @@ export function TripCard({ trip }) {
       <div className="trip-card-body">
         <span className="trip-card-dates">{fmtRange(trip.start_date, trip.end_date)}</span>
         <span className="trip-card-meta">
-          {days} {days === 1 ? "day" : "days"} · {trip.item_count}{" "}
-          {trip.item_count === 1 ? "item" : "items"}
+          {plural(days, "day")} · {plural(trip.item_count, "item")}
         </span>
       </div>
     </Link>
