@@ -8,7 +8,9 @@
 //
 // What this does NOT cover, so it is not mistaken for more than it is: effects
 // do not run, so anything that only happens after data arrives is untested,
-// and nothing here clicks. It is a smoke test.
+// and nothing here clicks. It is a smoke test. That gap is now covered by the
+// end-to-end suite in e2e/ (P-049), which drives a real browser — including the
+// lapsed-session case below, which these tests could only ever half-check.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
