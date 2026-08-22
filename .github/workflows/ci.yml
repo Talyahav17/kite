@@ -21,6 +21,12 @@ jobs:
           npm install --prefix server
           npm install --prefix client
 
+      # P-053: one rule, guarding the mistake that reached main three times
+      - name: Lint for unhandled promises
+        run: |
+          npm install
+          npm run lint
+
       - name: Test the API
         run: npm test
 
