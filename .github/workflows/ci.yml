@@ -27,7 +27,7 @@ jobs:
       - name: Check the client builds
         run: npm run build --prefix client
 
-  # P-049: the flows a browser has to actually walk — signing in, naming a
+  # P-050: the flows a browser has to actually walk — signing in, naming a
   # trip, accepting a day plan, opening a share link while signed out. Split
   # from the unit job so a browser download never delays that feedback.
   e2e:
