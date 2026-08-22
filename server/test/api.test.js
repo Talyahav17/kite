@@ -289,3 +289,48 @@ test("a trip gets a cover photo matching its destination", async () => {
   const nowhere = await api("GET", "/api/cover?city=Narnia");
   assert.equal(nowhere.status, 204, "an unknown place falls back to the gradient");
 });
+
+// ---------- T-002 ----------
+
+test("untimed items come last within their day, and the client agrees", async () => {
+  const api = await signedIn("untimed@example.com");
+  const { body } = await api("POST", "/api/trips", {
+    title: "Ordering",
+    destination: "Japan",
+    start_date: "2027-04-10",
+    end_date: "2027-04-11",
+  });
+  const trip = body.trip.id;
+
+  // deliberately inserted out of order, untimed first
+  await api("POST", `/api/trips/${trip}/items`, { title: "Print tickets", date: "2027-04-10" });
+  await api("POST", `/api/trips/${trip}/items`, {
+    title: "Flight",
+    date: "2027-04-10",
+    time: "07:00",
+  });
+  await api("POST", `/api/trips/${trip}/items`, {
+    title: "Dinner",
+    date: "2027-04-10",
+    time: "19:30",
+  });
+  await api("POST", `/api/trips/${trip}/items`, { title: "Insurance docs" }); // no date at all
+
+  const { body: loaded } = await api("GET", `/api/trips/${trip}`);
+  const order = loaded.items.map((i) => i.title);
+
+  assert.deepEqual(
+    order,
+    ["Flight", "Dinner", "Print tickets", "Insurance docs"],
+    "an empty time used to sort first, putting a note above a 07:00 flight"
+  );
+
+  // The client re-sorts locally after every edit. If the two rules disagree,
+  // the order changes on reload — that was T-006.
+  const { sortItems } = await import("../../client/src/lib/itinerary.js");
+  assert.deepEqual(
+    sortItems(loaded.items).map((i) => i.title),
+    order,
+    "the client's sort must reproduce the server's exactly"
+  );
+});
